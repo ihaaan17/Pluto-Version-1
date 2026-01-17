@@ -5,6 +5,7 @@ import {
   ChevronLeft, User, Mail, Calendar, Hash, Lock, 
   Trash2, Save, X, Edit2, CheckCircle, Terminal, Rocket 
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const Profile = () => {
     if (!username) { navigate('/'); return; }
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/v1/profile/${username}`);
+        const response = await axios.get(API_ENDPOINTS.PROFILE(username));
         setProfile(response.data);
         setEditForm({ username: response.data.username, email: response.data.email });
       } catch (err) {
@@ -45,7 +46,7 @@ const Profile = () => {
     e.preventDefault();
     setError(''); setSuccess('');
     try {
-      const response = await axios.put(`http://localhost:8080/api/v1/profile/${username}`, editForm);
+const response = await axios.put(API_ENDPOINTS.UPDATE_PROFILE(username), editForm);
       setProfile(response.data);
       localStorage.setItem('username', response.data.username);
       setSuccess('BIOMETRICS UPDATED SUCCESSFULLY');
@@ -64,7 +65,8 @@ const Profile = () => {
       return;
     }
     try {
-      await axios.put(`http://localhost:8080/api/v1/profile/${username}/password`, {
+      await axios.put(API_ENDPOINTS.CHANGE_PASSWORD(username), {
+
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       });
@@ -78,7 +80,7 @@ const Profile = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      await axios.delete(`http://localhost:8080/api/v1/profile/${username}`, { data: { password: deletePassword } });
+      await axios.delete(API_ENDPOINTS.DELETE_ACCOUNT(username), { data: { password: deletePassword } });
       localStorage.clear();
       navigate('/');
     } catch (err) {

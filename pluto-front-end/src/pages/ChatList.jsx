@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, LogOut, Plus, User, Rocket, MessageSquare, Radio, Terminal } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
+
 
 const ChatList = () => {
   const [rooms, setRooms] = useState([]);
@@ -23,7 +25,7 @@ const ChatList = () => {
     const fetchRooms = async () => {
       if (!username) { navigate('/'); return; }
       try {
-        const response = await axios.get(`http://localhost:8080/api/v1/rooms/user/${username}`);
+        const response = await axios.get(API_ENDPOINTS.USER_ROOMS(username));
         setRooms(response.data);
       } catch (err) {
         setError('Uplink Interrupted.');

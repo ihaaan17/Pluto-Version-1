@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Sparkles, Terminal, Lock, User, Mail, Fingerprint } from 'lucide-react';
 import axios from 'axios';
+import API_BASE_URL, { API_ENDPOINTS } from '../config/api';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true); // Toggles between Login and Sign Up
@@ -38,12 +39,11 @@ const Login = () => {
 
     // Change endpoint based on state
     const url = isLogin 
-      ? 'http://localhost:8080/api/v1/auth/login' 
-      : 'http://localhost:8080/api/v1/auth/register';
+      ? API_ENDPOINTS.LOGIN : API_ENDPOINTS.REGISTER;
 
     try {
       const payload = isLogin ? { username: trimmed, password } : { username: trimmed, email, password };
-      const response = await axios.post(url, payload);
+      const response = await axios.post(API_ENDPOINTS.LOGIN, payload);
       
       if (isLogin) {
         localStorage.setItem('token', response.data.token);

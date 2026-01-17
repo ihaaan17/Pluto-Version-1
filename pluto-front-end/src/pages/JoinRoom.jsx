@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Sparkles, Rocket, Lock, Terminal, Radio } from 'lucide-react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
+
 
 const JoinRoom = () => {
   const navigate = useNavigate();
@@ -32,7 +34,7 @@ const JoinRoom = () => {
     try {
       const payload = { roomId: id, username: username };
       // Use /create endpoint
-      const response = await axios.post('http://localhost:8080/api/v1/rooms/create', payload);
+      const response = await axios.post(API_ENDPOINTS.CREATE_ROOM, payload);
       navigate(`/chat/${response.data.roomId}`);
     } catch (err) {
       // Handle specific error for existing room
@@ -60,7 +62,7 @@ const JoinRoom = () => {
     try {
       const payload = { roomId: id, username: username };
       // Use /join endpoint
-      const response = await axios.post('http://localhost:8080/api/v1/rooms/join', payload);
+      const response = await axios.post(API_ENDPOINTS.JOIN_ROOM, payload);
       navigate(`/chat/${response.data.roomId}`);
     } catch (err) {
       // Handle specific error for non-existent room

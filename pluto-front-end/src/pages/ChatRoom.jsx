@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Client } from '@stomp/stompjs';
 import { ChevronLeft, MoreVertical, Send, Users, Paperclip } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
+
 
 const ChatRoom = () => {
   const { roomId } = useParams();
@@ -32,7 +34,7 @@ const ChatRoom = () => {
 
     const fetchRoomData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/v1/rooms/${roomId}`);
+        const response = await axios.get(API_ENDPOINTS.GET_ROOM(roomId));
         console.log('📦 Room data:', response.data);
         setRoom(response.data);
         setMessages(response.data.messages || []);
@@ -55,7 +57,7 @@ const ChatRoom = () => {
     console.log('🔌 Connecting to WebSocket for room:', roomId);
 
     const client = new Client({
-      brokerURL: 'ws://localhost:8080/chat',
+      brokerURL: API_ENDPOINTS.WS_URL,
       debug: (str) => console.log('[STOMP DEBUG]', str),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
@@ -184,9 +186,8 @@ const handlePhotoUpload = async (e) => {
 
   try {
     setUploadLoading(true);
-    const response = await axios.post(`http://localhost:8080/api/v1/rooms/${roomId.trim()}/photos`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const response = await axios.post(API_ENDPOINTS.UPLOAD_PHOTO(roomId), formData);
+    
     console.log('Photo uploaded successfully:', response.data);
     alert('Photo uploaded! It will appear in chat shortly.');
   } catch (err) {
@@ -213,7 +214,7 @@ useEffect(() => {
 
   const fetchRoomData = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/v1/rooms/${roomId}`);
+      const response = await axios.get(API_ENDPOINTS.GET_ROOM(roomId));
       console.log('📦 Room data:', response.data);
       setRoom(response.data);
       setMessages(response.data.messages || []);
