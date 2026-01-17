@@ -81,10 +81,10 @@ const Login = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex justify-center items-center gap-2 mb-1">
-            <h1 className="text-5xl font-black tracking-tighter text-white">
-              {isLogin ? 'PLUTO' : 'PLUTO'}
-            </h1>
-            <Sparkles className={`w-6 h-6 animate-pulse ${isLogin ? 'text-purple-400' : 'text-blue-400'}`} />
+            <h1 className="text-5xl font-black tracking-tighter text-white">PLUTO</h1>
+  <Sparkles 
+    className={`w-6 h-6 animate-pulse transition-colors duration-500 
+    ${isLogin ? 'text-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]'}`} />
           </div>
           <div className="flex items-center justify-center gap-2 text-white/40 font-mono text-[8px] tracking-[0.3em] uppercase">
             <Terminal className="w-3 h-3" />
