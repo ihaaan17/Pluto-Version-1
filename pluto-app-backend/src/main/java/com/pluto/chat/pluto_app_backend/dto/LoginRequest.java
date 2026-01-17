@@ -3,7 +3,7 @@ package com.pluto.chat.pluto_app_backend.dto;
 import lombok.Data;
 
 @Data
-public class CreateRoomRequest {
-    private String roomId;
+public class LoginRequest {
     private String username;
+    private String password;
 }

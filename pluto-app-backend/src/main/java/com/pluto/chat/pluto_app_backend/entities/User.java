@@ -1,26 +1,33 @@
-// src/main/java/com/pluto/chat/pluto_app_backend/entities/User.java
 package com.pluto.chat.pluto_app_backend.entities;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
+import org.springframework.data.mongodb.core.index.Indexed;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Document(collection = "users")
 public class User {
-
     @Id
     private String id;
-
-    private String username;  // Unique
-
+    
+    @Indexed(unique = true)
+    private String username;
+    
+    @Indexed(unique = true)
+    private String email;
+    
+    private String passwordHash;
+    
     @Builder.Default
-    private List<String> joinedRooms = new ArrayList<>();  // List of roomIds
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @Builder.Default
+    private List<String> joinedRooms = new ArrayList<>();
 }

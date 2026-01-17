@@ -1,127 +1,133 @@
-package com.pluto.chat.pluto_app_backend.controllers;
+package com.pluto.chat.pluto_app_backend.controller;
 
 import com.pluto.chat.pluto_app_backend.dto.CreateRoomRequest;
-import com.pluto.chat.pluto_app_backend.dto.JoinRoomRequest;
+import com.pluto.chat.pluto_app_backend.dto.MessageRequest;
 import com.pluto.chat.pluto_app_backend.entities.Message;
 import com.pluto.chat.pluto_app_backend.entities.Room;
-import com.pluto.chat.pluto_app_backend.repository.RoomRepository;
 import com.pluto.chat.pluto_app_backend.service.RoomService;
 import com.pluto.chat.pluto_app_backend.service.UserService;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/rooms")
+@CrossOrigin(origins = "*")
 public class RoomController {
-
+    
     private final RoomService roomService;
     private final UserService userService;
-    private final RoomRepository roomRepository;
 
-    public RoomController(RoomService roomService, UserService userService, RoomRepository roomRepository) {
+    public RoomController(RoomService roomService, UserService userService) {
         this.roomService = roomService;
         this.userService = userService;
-        this.roomRepository = roomRepository;
     }
 
-    // POST /api/v1/rooms → Create room with username
+    // Existing endpoint - Create or Join (for backward compatibility)
     @PostMapping
-    public ResponseEntity<?> createRoom(@RequestBody CreateRoomRequest request) {
-        if (request.roomId() == null || request.roomId().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Room ID cannot be empty");
-        }
-        if (request.username() == null || request.username().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Username cannot be empty");
-        }
-
-        String roomId = request.roomId().trim();
-        String username = request.username().trim();
-
-        // Check if room already exists
-        if (roomService.getRoomByRoomId(roomId) != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Room already exists");
-        }
-
-        // Create room
-        Room room = roomService.createRoom(roomId);
-
-        // Add creator as member
-        room.getMembers().add(username);
-
-        // Save updated room (with member)
-        roomRepository.save(room);  // We'll fix this below
-
-        // Add room to user's joined list
-        userService.addRoomToUser(username, roomId);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(room);
-    }
-
-    // GET /api/v1/rooms/{roomId}
-    @GetMapping("/{roomId}")
-    public ResponseEntity<Room> getRoom(@PathVariable String roomId) {
-        Room room = roomService.getRoomByRoomId(roomId);
-        if (room == null) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Room> createOrJoinRoom(@RequestBody CreateRoomRequest request) {
+        // Create or join the room
+        Room room = roomService.createOrJoinRoom(request.getRoomId(), request.getUsername());
+        
+        // Add room to user's joined rooms
+        userService.addRoomToUser(request.getUsername(), request.getRoomId());
+        
         return ResponseEntity.ok(room);
     }
 
-    // GET /api/v1/rooms/{roomId}/messages
-    @GetMapping("/{roomId}/messages")
-    public ResponseEntity<List<Message>> getMessages(
-            @PathVariable String roomId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        Room room = roomService.getRoomByRoomId(roomId);
-        if (room == null) {
-            return ResponseEntity.notFound().build();
+    // NEW: Create Room Only (fails if exists)
+    @PostMapping("/create")
+    public ResponseEntity<?> createRoom(@RequestBody CreateRoomRequest request) {
+        try {
+            System.out.println("🆕 Create room request: " + request.getRoomId() + " by " + request.getUsername());
+            
+            // Check if room already exists
+            if (roomService.getRoomByRoomId(request.getRoomId()).isPresent()) {
+                System.out.println("❌ Room already exists: " + request.getRoomId());
+                return ResponseEntity
+                        .status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "Room name already exists. Please choose a different name."));
+            }
+            
+            // Create new room
+            Room room = roomService.createOrJoinRoom(request.getRoomId(), request.getUsername());
+            userService.addRoomToUser(request.getUsername(), request.getRoomId());
+            
+            System.out.println("✅ Room created successfully: " + request.getRoomId());
+            return ResponseEntity.ok(room);
+            
+        } catch (RuntimeException e) {
+            System.err.println("❌ Create room failed: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         }
-
-        List<Message> messages = room.getMessages();
-        if (messages.isEmpty()) {
-            return ResponseEntity.ok(Collections.emptyList());
-        }
-
-        int total = messages.size();
-        int start = Math.max(0, total - (page + 1) * size);
-        int end = Math.max(start, total - page * size);
-
-        if (start >= end) {
-            return ResponseEntity.ok(Collections.emptyList());
-        }
-
-        List<Message> paginated = messages.subList(start, end);
-        Collections.reverse(paginated); // newest first
-
-        return ResponseEntity.ok(paginated);
     }
 
-    // POST /api/v1/rooms/{roomId}/join
-    @PostMapping("/{roomId}/join")
-    public ResponseEntity<String> joinRoom(
+    // NEW: Join Room Only (fails if doesn't exist)
+    @PostMapping("/join")
+    public ResponseEntity<?> joinRoom(@RequestBody CreateRoomRequest request) {
+        try {
+            System.out.println("🚪 Join room request: " + request.getRoomId() + " by " + request.getUsername());
+            
+            // Check if room exists
+            Room room = roomService.getRoomByRoomId(request.getRoomId())
+                    .orElseThrow(() -> new RuntimeException("Room not found. Please check the room code."));
+            
+            // Add user to room if not already a member
+            if (!room.getMembers().contains(request.getUsername())) {
+                room.getMembers().add(request.getUsername());
+                roomService.saveRoom(room);
+                System.out.println("✅ User added to room: " + request.getUsername());
+            } else {
+                System.out.println("ℹ️ User already in room: " + request.getUsername());
+            }
+            
+            // Add room to user's joined rooms
+            userService.addRoomToUser(request.getUsername(), request.getRoomId());
+            
+            System.out.println("✅ User joined room successfully: " + request.getRoomId());
+            return ResponseEntity.ok(room);
+            
+        } catch (RuntimeException e) {
+            System.err.println("❌ Join room failed: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{roomId}")
+    public ResponseEntity<Room> getRoom(@PathVariable String roomId) {
+        return roomService.getRoomByRoomId(roomId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/user/{username}")
+    public ResponseEntity<List<Room>> getUserRooms(@PathVariable String username) {
+        return userService.getUserByUsername(username)
+                .map(user -> {
+                    List<Room> rooms = roomService.getRoomsByIds(user.getJoinedRooms());
+                    return ResponseEntity.ok(rooms);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{roomId}/messages")
+    public ResponseEntity<Room> addMessage(
             @PathVariable String roomId,
-            @RequestBody JoinRoomRequest request) {
-
-        Room room = roomService.getRoomByRoomId(roomId);
-        if (room == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        String username = request.username().trim();
-        if (!room.getMembers().contains(username)) {
-            room.getMembers().add(username);
-            roomRepository.save(room);  // Save updated members
-        }
-
-        userService.addRoomToUser(username, roomId);
-
-        return ResponseEntity.ok("Joined room successfully");
+            @RequestBody MessageRequest request) {
+        
+        Message message = Message.builder()
+                .sender(request.getSender())
+                .content(request.getContent())
+                .build();
+        
+        Room updatedRoom = roomService.addMessage(roomId, message);
+        return ResponseEntity.ok(updatedRoom);
     }
 }
