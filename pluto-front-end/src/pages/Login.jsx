@@ -43,7 +43,7 @@ const Login = () => {
 
     try {
       const payload = isLogin ? { username: trimmed, password } : { username: trimmed, email, password };
-      const response = await axios.post(API_ENDPOINTS.LOGIN, payload);
+      const response = await axios.post(url, payload);
       
       if (isLogin) {
         localStorage.setItem('token', response.data.token);
