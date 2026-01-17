@@ -82,7 +82,7 @@ const Login = () => {
         <div className="text-center mb-6">
           <div className="flex justify-center items-center gap-2 mb-1">
             <h1 className="text-5xl font-black tracking-tighter text-white">
-              {isLogin ? 'PLUTO' : 'CORE'}
+              {isLogin ? 'PLUTO' : 'PLUTO'}
             </h1>
             <Sparkles className={`w-6 h-6 animate-pulse ${isLogin ? 'text-purple-400' : 'text-blue-400'}`} />
           </div>
