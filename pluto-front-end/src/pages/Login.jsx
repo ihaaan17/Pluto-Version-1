@@ -5,7 +5,7 @@ import axios from 'axios';
 import API_BASE_URL, { API_ENDPOINTS } from '../config/api';
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true); // Toggles between Login and Sign Up
+  const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,6 +15,7 @@ const Login = () => {
   const [statusIndex, setStatusIndex] = useState(0);
   const navigate = useNavigate();
 
+  // The text still changes to reflect the mode, but the colors will stay purple
   const systemStatuses = isLogin 
     ? ["Establishing subspace link...", "Encrypting frequency...", "Awaiting identity signature..."]
     : ["Scanning star-charts...", "Allocating neural storage...", "Syncing galaxy-wide ID..."];
@@ -24,7 +25,7 @@ const Login = () => {
       setStatusIndex((prev) => (prev + 1) % systemStatuses.length);
     }, 3000);
     return () => clearInterval(timer);
-  }, [isLogin]);
+  }, [isLogin, systemStatuses.length]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -37,9 +38,7 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    // Change endpoint based on state
-    const url = isLogin 
-      ? API_ENDPOINTS.LOGIN : API_ENDPOINTS.REGISTER;
+    const url = isLogin ? API_ENDPOINTS.LOGIN : API_ENDPOINTS.REGISTER;
 
     try {
       const payload = isLogin ? { username: trimmed, password } : { username: trimmed, email, password };
@@ -51,7 +50,6 @@ const Login = () => {
         localStorage.setItem('userId', response.data.userId);
         navigate('/chats');
       } else {
-        // Switch back to login after successful signup
         setIsLogin(true);
         setError('Success! Profile forged. Please login.');
       }
@@ -67,10 +65,12 @@ const Login = () => {
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
       className="relative h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden bg-[#050208] cursor-default"
     >
-      {/* BACKGROUND EFFECTS */}
+      {/* BACKGROUND EFFECTS - Always Purple */}
       <div 
-        className="pointer-events-none absolute inset-0 z-10 opacity-30 transition-colors duration-1000"
-        style={{ background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, ${isLogin ? 'rgba(168, 85, 247, 0.15)' : 'rgba(59, 130, 246, 0.15)'}, transparent 80%)` }}
+        className="pointer-events-none absolute inset-0 z-10 opacity-30 transition-all duration-1000"
+        style={{ 
+          background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(168, 85, 247, 0.15), transparent 80%)` 
+        }}
       />
       <div className="absolute inset-[-100%] animate-drift opacity-10 z-0 pointer-events-none">
         <div className="w-full h-full bg-[radial-gradient(white_1px,transparent_1px)] bg-[length:100px_100px]" />
@@ -78,13 +78,13 @@ const Login = () => {
 
       <div className="relative z-20 flex flex-col items-center w-full max-w-[400px] animate-in fade-in zoom-in duration-700">
         
-        {/* Header */}
+        {/* Header - Always Purple Star */}
         <div className="text-center mb-6">
           <div className="flex justify-center items-center gap-2 mb-1">
             <h1 className="text-5xl font-black tracking-tighter text-white">PLUTO</h1>
-  <Sparkles 
-    className={`w-6 h-6 animate-pulse transition-colors duration-500 
-    ${isLogin ? 'text-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]'}`} />
+            <Sparkles 
+              className="w-6 h-6 animate-pulse text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" 
+            />
           </div>
           <div className="flex items-center justify-center gap-2 text-white/40 font-mono text-[8px] tracking-[0.3em] uppercase">
             <Terminal className="w-3 h-3" />
@@ -106,7 +106,7 @@ const Login = () => {
                   placeholder="Enter handle..." 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white"
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
                 />
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
               </div>
@@ -122,7 +122,7 @@ const Login = () => {
                     placeholder="star@sector.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-blue-500/40 text-sm text-white"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all"
                   />
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 </div>
@@ -138,7 +138,7 @@ const Login = () => {
                   placeholder="••••••••" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white"
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
                 />
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 <Rocket className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-500 ${password ? 'text-purple-500' : 'opacity-0'}`} />
@@ -174,7 +174,7 @@ const Login = () => {
             }}
             className="mt-6 flex items-center gap-2 text-gray-600 hover:text-white text-[8px] uppercase tracking-widest font-black transition-all group"
           >
-            <Fingerprint className="w-3 h-3 group-hover:text-purple-400" />
+            <Fingerprint className="w-3 h-3 group-hover:text-purple-400 transition-colors" />
             {isLogin ? "Need a cosmic handle? Sign Up" : "Already registered? Login"}
           </button>
         </div>
