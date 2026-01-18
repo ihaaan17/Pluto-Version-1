@@ -91,7 +91,7 @@ const ChatRoom = () => {
   };
 
   if (loading) return (
-    <div className="fixed inset-0 bg-[#0a0510] flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#0a0510] flex items-center justify-center font-sans">
        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
@@ -102,9 +102,9 @@ const ChatRoom = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-black pointer-events-none z-0" />
 
       {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/10 bg-black/60 backdrop-blur-2xl flex items-center justify-between px-3 md:px-6">
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/10 bg-black/60 backdrop-blur-2xl flex items-center justify-between px-3 md:px-6 shadow-2xl">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={() => navigate('/chats')} className="p-1 text-white">
+          <button onClick={() => navigate('/chats')} className="p-1 text-white active:scale-90 transition-transform">
             <ChevronLeft className="w-7 h-7" />
           </button>
           <div className="flex items-center gap-3">
@@ -114,8 +114,8 @@ const ChatRoom = () => {
             <div>
               <h3 className="text-white font-bold text-[15px] truncate">{roomId}</h3>
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                <span className="text-[11px] text-purple-300 font-medium">Active now</span>
+                <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`} />
+                <span className="text-[11px] text-purple-300 font-medium">{connected ? 'Active now' : 'Reconnecting...'}</span>
               </div>
             </div>
           </div>
@@ -125,11 +125,14 @@ const ChatRoom = () => {
         </button>
       </header>
 
-      {/* MESSAGES */}
+      {/* MESSAGES WITH IMAGE FIX */}
       <main className="flex-1 overflow-y-auto pt-20 pb-6 px-4 z-10 custom-scrollbar">
         <div className="max-w-2xl mx-auto flex flex-col">
           {messages.map((msg, i) => {
             const isMe = msg.sender === username;
+            // Check for any possible field name for the image URL
+            const imageUrl = msg.mediaUrl || msg.imageUrl || msg.photoUrl;
+            
             return (
               <div key={i} className={`flex w-full mb-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
                 {!isMe && (
@@ -142,8 +145,25 @@ const ChatRoom = () => {
                        : 'bg-[#1f1a29]/90 backdrop-blur-md text-white rounded-[20px] rounded-bl-[4px] border border-white/5'
                 }`}>
                   {!isMe && <p className="text-[10px] text-purple-400 font-bold mb-0.5">{msg.sender}</p>}
-                  <p className="text-[14px] leading-relaxed break-words">{msg.content}</p>
-                  <div className="text-[9px] mt-1 opacity-40 text-right">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  
+                  {/* Render Content if it exists */}
+                  {msg.content && <p className="text-[14px] leading-relaxed break-words">{msg.content}</p>}
+                  
+                  {/* Render Image if it exists */}
+                  {imageUrl && (
+                    <div className="mt-2 -mx-1 mb-1 rounded-xl overflow-hidden border border-white/10 shadow-inner bg-black/20">
+                      <img 
+                        src={imageUrl} 
+                        alt="Shared content" 
+                        className="w-full h-auto max-h-80 object-cover hover:scale-[1.02] transition-transform duration-300" 
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+
+                  <div className={`text-[9px] mt-1 opacity-40 text-right font-mono ${isMe ? 'text-white' : 'text-purple-300'}`}>
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               </div>
             );
@@ -152,11 +172,11 @@ const ChatRoom = () => {
         </div>
       </main>
 
-      {/* FOOTER - FIXED INPUT GLOW AND SQUARE REMOVAL */}
+      {/* FOOTER - WITH GLOW & NO SQUARE */}
       <footer className="relative z-40 p-4 bg-black/40 backdrop-blur-xl flex-shrink-0">
-        <div className="max-w-2xl mx-auto flex items-center bg-[#121212] rounded-full px-2 py-1.5 gap-2 shadow-xl border border-white/5 transition-all focus-within:ring-1 focus-within:ring-purple-500/50 focus-within:border-purple-500/30">
+        <div className="max-w-2xl mx-auto flex items-center bg-[#121212] rounded-full px-2 py-1.5 gap-2 shadow-xl border border-white/5 transition-all focus-within:ring-1 focus-within:ring-purple-500/40 focus-within:border-purple-500/20">
           
-          <label className="p-2.5 text-white hover:bg-white/5 rounded-full cursor-pointer transition-colors">
+          <label className="p-2.5 text-white hover:bg-white/5 rounded-full cursor-pointer transition-colors active:scale-95">
             <ImageIcon className="w-6 h-6" />
             <input type="file" accept="image/*" hidden onChange={handlePhotoUpload} />
           </label>
@@ -167,7 +187,6 @@ const ChatRoom = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
             disabled={!connected}
-            // appearance-none and outline-none !important removes the purple square
             className="flex-1 bg-transparent py-2 text-white border-none outline-none focus:outline-none focus:ring-0 appearance-none shadow-none text-[16px] placeholder:text-gray-500"
             style={{ 
                 outline: 'none', 
@@ -180,7 +199,8 @@ const ChatRoom = () => {
           {(newMessage.trim() || uploadLoading) && (
             <button
               onClick={sendMessage}
-              className="flex items-center justify-center bg-purple-600 text-white rounded-full w-14 h-10 hover:bg-purple-500 transition-all active:scale-90 animate-in slide-in-from-right-4 zoom-in duration-300 ease-out shadow-lg shadow-purple-500/40"
+              disabled={uploadLoading}
+              className="flex items-center justify-center bg-purple-600 text-white rounded-full min-w-[56px] h-10 hover:bg-purple-500 transition-all active:scale-90 animate-in slide-in-from-right-4 zoom-in duration-300 ease-out shadow-lg shadow-purple-500/40"
             >
               {uploadLoading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
