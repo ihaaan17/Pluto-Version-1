@@ -135,7 +135,6 @@ const ChatRoom = () => {
           </div>
         </div>
 
-        {/* IMPROVED COPY BUTTON */}
         <button 
           onClick={copyRoomId} 
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all active:scale-90 ${
@@ -197,7 +196,7 @@ const ChatRoom = () => {
 
       {/* ================= FOOTER ================= */}
       <footer className="relative z-40 p-4 bg-black/40 backdrop-blur-xl border-t border-white/10 flex-shrink-0">
-        <div className="max-w-2xl mx-auto flex items-center bg-[#1a1625] border border-white/10 rounded-2xl px-3 py-1.5 gap-2 focus-within:border-purple-500/50 transition-all shadow-xl">
+        <div className="max-w-2xl mx-auto flex items-center bg-[#1a1625] border border-white/10 rounded-2xl px-3 py-1.5 gap-2 transition-all shadow-xl">
           
           <label className="p-2 text-purple-400 cursor-pointer hover:bg-white/5 rounded-full transition-colors">
             <Paperclip className="w-5 h-5" />
@@ -210,19 +209,19 @@ const ChatRoom = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Message..."
             disabled={!connected}
-            className="flex-1 bg-transparent py-2 text-white outline-none text-[15px] placeholder:text-gray-500"
+            // "outline-none" and "focus:ring-0" removes the square box
+            className="flex-1 bg-transparent py-2 text-white outline-none focus:ring-0 text-[15px] placeholder:text-gray-500"
             style={{ fontSize: '16px' }}
           />
 
-          {newMessage.trim() || uploadLoading ? (
+          {(newMessage.trim() || uploadLoading) && (
             <button
               onClick={sendMessage}
-              className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-500 transition-all active:scale-95 shadow-lg shadow-purple-500/30"
+              // "animate-in zoom-in duration-200" adds the pop effect
+              className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-500 transition-all active:scale-95 shadow-lg shadow-purple-500/30 animate-in zoom-in duration-200 fade-in"
             >
               {uploadLoading ? '...' : 'Send'}
             </button>
-          ) : (
-             <div className="w-2" /> 
           )}
         </div>
       </footer>
