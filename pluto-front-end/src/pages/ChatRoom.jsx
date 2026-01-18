@@ -209,18 +209,21 @@ const ChatRoom = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Message..."
             disabled={!connected}
-            // "outline-none" and "focus:ring-0" removes the square box
-            className="flex-1 bg-transparent py-2 text-white outline-none focus:ring-0 text-[15px] placeholder:text-gray-500"
-            style={{ fontSize: '16px' }}
+            // TO REMOVE PURPLE SQUARE: Added focus:ring-0, focus:border-transparent, and ring-offset-0
+            className="flex-1 bg-transparent py-2 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus:border-transparent text-[15px] placeholder:text-gray-500 border-none ring-0"
+            style={{ fontSize: '16px', boxShadow: 'none' }}
           />
 
           {(newMessage.trim() || uploadLoading) && (
             <button
               onClick={sendMessage}
-              // "animate-in zoom-in duration-200" adds the pop effect
-              className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-500 transition-all active:scale-95 shadow-lg shadow-purple-500/30 animate-in zoom-in duration-200 fade-in"
+              className="p-2 mr-1 text-purple-400 hover:text-purple-300 transition-all active:scale-90 animate-in zoom-in duration-300 fade-in"
             >
-              {uploadLoading ? '...' : 'Send'}
+              {uploadLoading ? (
+                <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-6 h-6 rotate-[0deg] fill-purple-600/20" /> 
+              )}
             </button>
           )}
         </div>
