@@ -10,4 +10,15 @@ export default defineConfig({
   define: {
     'global': 'window',
   },
+  // Add this section to fix the Framer Motion build error
+  build: {
+    rollupOptions: {
+      // Ensures that framer-motion is bundled correctly
+      external: [], 
+    },
+  },
+  optimizeDeps: {
+    // Forces Vite to pre-bundle framer-motion for stability
+    include: ['framer-motion'],
+  },
 })
