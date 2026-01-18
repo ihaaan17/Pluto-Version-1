@@ -263,7 +263,7 @@ const ChatRoom = () => {
 
       {/* CHAT AREA: Custom padding for desktop + top padding for fixed header */}
       <main className="flex-1 overflow-y-auto custom-scrollbar z-10 relative">
-        <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4 pt-[68px] md:pt-[96px] pb-[16px] md:pb-[96px]">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4 pt-[68px] md:pt-[96px] pb-[80px] md:pb-[96px]">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-gray-500 text-sm italic">
               No transmissions in this sector yet...
