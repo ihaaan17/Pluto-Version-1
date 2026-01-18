@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { 
-  ChevronLeft, Mail, Calendar, Hash, Lock, 
-  Trash2, X, Edit2, CheckCircle, Terminal, Rocket 
+  ChevronLeft, User, Mail, Calendar, Hash, Lock, 
+  Trash2, Save, X, Edit2, CheckCircle, Terminal, Rocket 
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
 
 const Profile = () => {
   const navigate = useNavigate();
   const username = localStorage.getItem('username');
+  const token = localStorage.getItem('token');
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,6 @@ const Profile = () => {
     fetchProfile();
   }, [username, navigate]);
 
-  // Logic Handlers (Unchanged)
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
@@ -62,14 +62,15 @@ const Profile = () => {
     e.preventDefault();
     setError(''); setSuccess('');
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('ENCRYPTION MISMATCH'); return;
+      setError('ENCRYPTION MISMATCH: PASSWORDS DO NOT MATCH');
+      return;
     }
     try {
       await axios.put(API_ENDPOINTS.CHANGE_PASSWORD(username), {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       });
-      setSuccess('SECURITY KEY CHANGED');
+      setSuccess('SECURITY KEY CHANGED SUCCESSFULLY');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setIsChangingPassword(false);
     } catch (err) {
@@ -102,16 +103,19 @@ const Profile = () => {
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
       className="relative min-h-screen w-full flex flex-col p-4 md:p-8 overflow-x-hidden bg-[#050208]"
     >
-      <div className="nebula-bg absolute inset-0 z-0 pointer-events-none" />
+      <div className="nebula-bg" />
+      <div className="absolute inset-[-100%] animate-drift opacity-20 z-0 pointer-events-none">
+        <div className="w-full h-full bg-[radial-gradient(circle,white_1.2px,transparent_1.2px)] bg-[length:100px_100px]" />
+      </div>
       
       <div 
-        className="pointer-events-none fixed inset-0 z-10 opacity-30 transition-opacity duration-500"
+        className="pointer-events-none absolute inset-0 z-10 opacity-30 transition-opacity duration-500"
         style={{ background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(168, 85, 247, 0.15), transparent 80%)` }}
       />
 
-      <header className="relative z-20 flex items-center gap-6 mb-8 max-w-5xl mx-auto w-full">
+      <header className="relative z-20 flex items-center gap-6 mb-12 max-w-5xl mx-auto w-full">
         <button onClick={() => navigate('/chats')} className="w-12 h-12 premium-glass flex items-center justify-center rounded-2xl border-white/10 hover:border-purple-500/50 hover:scale-105 transition-all group">
-          <ChevronLeft className="w-6 h-6 text-white group-hover:text-purple-400" />
+          <ChevronLeft className="w-6 h-6 text-white group-hover:text-purple-400 transition-colors" />
         </button>
         <div>
           <p className="text-[9px] text-purple-500/60 font-black uppercase tracking-[0.4em]">Subspace Identity</p>
@@ -119,96 +123,144 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="relative z-20 max-w-5xl mx-auto w-full space-y-6">
+      <main className="relative z-20 max-w-5xl mx-auto w-full space-y-6 pb-20">
         
-        {/* PROFILE CARD */}
-        <section className="premium-glass p-8 md:p-10 rounded-[2.5rem] border-white/5">
+        {/* 👤 PRIMARY PROFILE CARD */}
+        <section className="premium-glass p-8 md:p-10 rounded-[2.5rem] border-white/5 overflow-hidden">
           <div className="flex flex-col md:flex-row items-center gap-10">
-            <div className="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-5xl font-black text-white shadow-[0_0_50px_rgba(147,51,234,0.3)]">
-              {profile.username[0].toUpperCase()}
+            <div className="relative">
+              <div className="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-5xl font-black text-white shadow-[0_0_50px_rgba(147,51,234,0.3)] border-2 border-white/20">
+                {profile.username[0].toUpperCase()}
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#050208] border border-white/10 rounded-xl flex items-center justify-center shadow-xl">
+                <CheckCircle className="w-5 h-5 text-purple-400" />
+              </div>
             </div>
+
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-4xl font-black text-white tracking-tighter uppercase mb-2">{profile.username}</h2>
-              <p className="text-purple-400/80 font-bold text-xs tracking-widest uppercase flex items-center gap-2 justify-center md:justify-start">
+              <p className="text-purple-400/80 font-bold text-xs tracking-widest uppercase mb-6 flex items-center justify-center md:justify-start gap-2">
                 <Mail className="w-3 h-3" /> {profile.email}
               </p>
+              
+              <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/5 flex items-center gap-3">
+                  <Hash className="w-4 h-4 text-purple-500" />
+                  <div>
+                    <p className="text-white text-sm font-black">{profile.totalRooms}</p>
+                    <p className="text-[8px] text-gray-500 uppercase font-black tracking-widest">Active Sectors</p>
+                  </div>
+                </div>
+                <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/5 flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-purple-500" />
+                  <div>
+                    <p className="text-white text-sm font-black">
+                      {Math.floor((new Date() - new Date(profile.createdAt)) / (1000 * 60 * 60 * 24))}
+                    </p>
+                    <p className="text-[8px] text-gray-500 uppercase font-black tracking-widest">Service Days</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* INPUT SECTIONS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 📝 BIO INFORMATION (LOGIC RESTORED) */}
           <section className="premium-glass p-8 rounded-[2rem] border-white/5">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-sm font-black text-white uppercase flex items-center gap-3"><Terminal className="w-4 h-4 text-purple-500" /> Identity</h3>
-              {!isEditingProfile && <button onClick={() => setIsEditingProfile(true)} className="p-2 text-purple-400"><Edit2 className="w-4 h-4" /></button>}
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-3">
+                <Terminal className="w-4 h-4 text-purple-500" /> Identity Update
+              </h3>
+              {!isEditingProfile && (
+                <button onClick={() => setIsEditingProfile(true)} className="p-2 hover:bg-white/5 rounded-xl text-purple-400 transition-all">
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
+
             {isEditingProfile ? (
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
-                <input type="text" value={editForm.username} onChange={(e) => setEditForm({...editForm, username: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white uppercase text-xs font-bold outline-none" />
-                <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-purple-600 text-white font-black py-2 rounded-xl text-[10px] uppercase">Update</button>
-                  <button type="button" onClick={() => setIsEditingProfile(false)} className="px-4 bg-white/5 text-white rounded-xl text-[10px] uppercase">Cancel</button>
+              <form onSubmit={handleUpdateProfile} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-1">Callsign</label>
+                  <input type="text" value={editForm.username} onChange={(e) => setEditForm({...editForm, username: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-5 text-white text-xs font-bold focus:border-purple-500/50 outline-none transition-all uppercase" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-1">MAIL</label>
+                  <input type="email" value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-5 text-white text-xs font-bold focus:border-purple-500/50 outline-none transition-all" />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" className="flex-1 auth-button py-4 text-[10px]">SAVE DATA</button>
+                  <button type="button" onClick={() => setIsEditingProfile(false)} className="px-6 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black text-white transition-all uppercase">Cancel</button>
                 </div>
               </form>
             ) : (
-              <div className="space-y-3">
-                <div className="flex justify-between border-b border-white/5 pb-2">
-                   <span className="text-[10px] text-gray-500 font-black uppercase">Callsign</span>
-                   <span className="text-sm text-white font-bold">{profile.username}</span>
+              <div className="space-y-4">
+                <div className="p-5 bg-black/20 border border-white/5 rounded-2xl flex justify-between items-center">
+                  <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Callsign</span>
+                  <span className="text-sm text-white font-bold">{profile.username}</span>
+                </div>
+                <div className="p-5 bg-black/20 border border-white/5 rounded-2xl flex justify-between items-center">
+                  <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Comm-Link</span>
+                  <span className="text-sm text-white font-bold">{profile.email}</span>
                 </div>
               </div>
             )}
           </section>
 
+          {/* 🔐 SECURITY SECTION (LOGIC RESTORED) */}
           <section className="premium-glass p-8 rounded-[2rem] border-white/5">
-            <h3 className="text-sm font-black text-white uppercase flex items-center gap-3 mb-6"><Lock className="w-4 h-4 text-purple-500" /> Security</h3>
+            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-3 mb-8">
+              <Lock className="w-4 h-4 text-purple-500" /> Security Protocol
+            </h3>
             {!isChangingPassword ? (
-              <button onClick={() => setIsChangingPassword(true)} className="w-full py-3 bg-purple-600/10 border border-purple-500/20 text-purple-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600/20 transition-all">
+              <button onClick={() => setIsChangingPassword(true)} className="w-full py-4 bg-purple-600/10 border border-purple-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-purple-400 hover:bg-purple-500/20 transition-all">
                 Change Security Key
               </button>
             ) : (
-              <form onSubmit={handleChangePassword} className="space-y-3">
-                <input type="password" placeholder="NEW KEY" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white text-sm outline-none" required />
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <input type="password" placeholder="CURRENT KEY" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white text-[10px] font-bold outline-none focus:border-purple-500/50" required />
+                <input type="password" placeholder="NEW KEY" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white text-[10px] font-bold outline-none focus:border-purple-500/50" required minLength={6} />
+                <input type="password" placeholder="CONFIRM NEW KEY" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white text-[10px] font-bold outline-none focus:border-purple-500/50" required />
                 <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-purple-600 text-white font-black py-2 rounded-xl text-[10px]">SAVE</button>
-                  <button type="button" onClick={() => setIsChangingPassword(false)} className="px-4 bg-white/5 text-white rounded-xl"><X className="w-4 h-4" /></button>
+                  <button type="submit" className="flex-1 bg-purple-600 rounded-xl py-3 text-[10px] font-black text-white uppercase">Initialize Update</button>
+                  <button type="button" onClick={() => setIsChangingPassword(false)} className="px-4 bg-white/5 rounded-xl text-white font-black"><X className="w-4 h-4" /></button>
                 </div>
               </form>
+            )}
+          </section>
+
+          {/* ⚠️ DANGER ZONE (LOGIC RESTORED) */}
+          <section className="premium-glass p-8 rounded-[2rem] border-red-500/20 lg:col-span-2">
+            <h3 className="text-sm font-black text-red-500 uppercase tracking-[0.2em] flex items-center gap-3 mb-6">
+              <Trash2 className="w-4 h-4" /> Critical: Decommission Account
+            </h3>
+            {!isDeleting ? (
+              <button onClick={() => setIsDeletingAccount(true)} className="px-8 py-3 bg-red-600/10 border border-red-500/30 rounded-full text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-600/20 transition-all">
+                Terminate Identity
+              </button>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-3 animate-in zoom-in-95">
+                <input type="password" placeholder="ENTER PASSWORD" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="flex-1 bg-black/40 border border-red-500/30 rounded-xl py-4 px-5 text-white text-xs outline-none" />
+                <button onClick={handleDeleteAccount} className="px-10 bg-red-600 hover:bg-red-700 rounded-xl text-[10px] font-black text-white uppercase">Confirm Deletion</button>
+                <button onClick={() => setIsDeletingAccount(false)} className="px-6 bg-white/5 rounded-xl text-white font-black uppercase text-[10px]">Abort</button>
+              </div>
             )}
           </section>
         </div>
 
-        {/* TERMINATE SECTION */}
-        <section className="premium-glass p-8 rounded-[2rem] border-red-500/10">
-            <h3 className="text-sm font-black text-red-500 uppercase flex items-center gap-3 mb-4"><Trash2 className="w-4 h-4" /> Decommission</h3>
-            {!isDeleting ? (
-              <button onClick={() => setIsDeletingAccount(true)} className="px-6 py-3 bg-red-600/10 border border-red-500/20 text-red-500 rounded-full text-[10px] font-black uppercase hover:bg-red-600/20 transition-all">
-                Terminate Identity
-              </button>
-            ) : (
-              <div className="flex gap-3">
-                <input type="password" placeholder="PASSWORD" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="flex-1 bg-black/40 border border-red-500/20 rounded-xl px-4 text-white text-sm outline-none" />
-                <button onClick={handleDeleteAccount} className="bg-red-600 text-white font-black px-6 py-3 rounded-xl text-[10px] uppercase">Confirm</button>
-                <button onClick={() => setIsDeletingAccount(false)} className="bg-white/5 text-white px-4 rounded-xl font-black text-[10px] uppercase">Abort</button>
-              </div>
-            )}
-        </section>
-
-        {/* 🌠 DEEP SPACE ANIMATION (MOVED UPSIDE) */}
+        {/* 🌠 DEEP SPACE ANIMATION (RE-POSITIONED HIGHER) */}
         <motion.section 
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.3 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative h-[300px] w-full flex flex-col items-center justify-center overflow-hidden"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: false, amount: 0.1 }}
+          className="relative h-[250px] w-full flex flex-col items-center justify-center pt-10"
         >
-          {/* Radar Circles */}
-          <div className="absolute flex items-center justify-center">
+          <div className="absolute flex items-center justify-center pointer-events-none">
             <motion.div 
               animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="w-64 h-64 rounded-full border border-purple-500/10 border-dashed"
+              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+              className="w-72 h-72 rounded-full border border-purple-500/10 border-dashed"
             />
           </div>
 
@@ -217,32 +269,25 @@ const Profile = () => {
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             className="relative z-30 flex flex-col items-center"
           >
-            <Rocket className="w-16 h-16 text-purple-500/80 mb-6 rotate-[-45deg] filter drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]" />
-            
-            <div className="text-center">
-              <span className="block text-purple-400/60 font-black text-[10px] tracking-[0.6em] uppercase">
-                Subspace Pulse Active
-              </span>
-              <div className="flex gap-2 justify-center mt-3">
-                <div className="w-1 h-1 bg-purple-500/40 rounded-full animate-ping" />
-                <div className="w-1 h-1 bg-purple-500/40 rounded-full animate-ping [animation-delay:0.3s]" />
-              </div>
-            </div>
+            <Rocket className="w-14 h-14 text-purple-500 rotate-[-45deg] filter drop-shadow-[0_0_15px_rgba(168,85,247,0.4)] mb-4" />
+            <span className="text-purple-400/50 font-black text-[9px] tracking-[0.8em] uppercase">
+              Deep Space Linked
+            </span>
           </motion.div>
         </motion.section>
 
       </main>
 
-      {/* TOASTS */}
+      {/* 🔔 SYSTEM TOASTS (LOGIC RESTORED) */}
       {(success || error) && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5">
-           <div className={`px-8 py-4 rounded-2xl border font-black uppercase text-[10px] flex items-center gap-4 shadow-2xl ${
-             success ? 'bg-green-500/10 border-green-500/50 text-green-400' : 'bg-red-500/10 border-red-500/50 text-red-400'
-           }`}>
-             {success ? <CheckCircle className="w-4 h-4" /> : <Terminal className="w-4 h-4" />}
-             {success || error}
-             <button onClick={() => {setSuccess(''); setError('');}} className="ml-2"><X className="w-3 h-3" /></button>
-           </div>
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-5">
+            <div className={`px-8 py-4 rounded-2xl border font-black uppercase text-[10px] flex items-center gap-4 shadow-2xl ${
+              success ? 'bg-green-500/10 border-green-500/50 text-green-400' : 'bg-red-500/10 border-red-500/50 text-red-400'
+            }`}>
+              {success ? <CheckCircle className="w-4 h-4" /> : <Terminal className="w-4 h-4" />}
+              {success || error}
+              <button onClick={() => {setSuccess(''); setError('');}} className="ml-2 opacity-50 hover:opacity-100"><X className="w-3 h-3" /></button>
+            </div>
         </div>
       )}
     </div>
