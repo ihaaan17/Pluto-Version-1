@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Client } from '@stomp/stompjs';
-import { ChevronLeft, MoreVertical, Send, Users, Paperclip } from 'lucide-react';
-import { API_ENDPOINTS } from '../config/api';
-
+import { ChevronLeft, Send, Users, Paperclip } from 'lucide-react';
+import API_BASE_URL, { API_ENDPOINTS } from '../config/api';
 
 const ChatRoom = () => {
   const { roomId } = useParams();
@@ -17,15 +16,16 @@ const ChatRoom = () => {
   const [error, setError] = useState('');
   const [connected, setConnected] = useState(false);
   const messagesEndRef = useRef(null);
+  const stompClientRef = useRef(null);
 
   const username = localStorage.getItem('username');
-  const stompClientRef = useRef(null);
+
   const copyRoomId = () => {
-  navigator.clipboard.writeText(roomId);
-  // Optional: You could add a temporary 'Copied!' state here
-  alert('Room ID copied to clipboard!'); 
-};
-  // Fetch initial room data and messages
+    navigator.clipboard.writeText(roomId);
+    alert('Room ID copied to clipboard!');
+  };
+
+  // 1. Fetch Room Data
   useEffect(() => {
     if (!username) {
       navigate('/');
@@ -35,7 +35,6 @@ const ChatRoom = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(API_ENDPOINTS.GET_ROOM(roomId));
-        console.log('📦 Room data:', response.data);
         setRoom(response.data);
         setMessages(response.data.messages || []);
         setError('');
@@ -50,11 +49,9 @@ const ChatRoom = () => {
     fetchRoomData();
   }, [roomId, username, navigate]);
 
-  // WebSocket + STOMP connection
+  // 2. WebSocket + STOMP connection
   useEffect(() => {
     if (!username || !roomId) return;
-
-    console.log('🔌 Connecting to WebSocket for room:', roomId);
 
     const client = new Client({
       brokerURL: API_ENDPOINTS.WS_URL,
@@ -64,84 +61,57 @@ const ChatRoom = () => {
       heartbeatOutgoing: 4000,
       
       onConnect: (frame) => {
-        console.log('✅ WebSocket Connected!', frame);
         setConnected(true);
         setError('');
 
         client.subscribe(`/topic/room/${roomId}`, (message) => {
-          console.log('📩 Raw message received:', message);
-          
           try {
             const received = JSON.parse(message.body);
-            console.log('📩 Parsed message:', received);
-            
             setMessages((prev) => {
               const exists = prev.some(m => 
                 m.sender === received.sender && 
                 m.content === received.content && 
                 Math.abs(new Date(m.timestamp) - new Date(received.timestamp)) < 1000
               );
-              
-              if (exists) {
-                console.log('⚠️ Duplicate message detected, skipping');
-                return prev;
-              }
-              
-              console.log('✅ Adding new message to state');
+              if (exists) return prev;
               return [...prev, received];
             });
           } catch (err) {
             console.error('❌ Error parsing message:', err);
           }
         });
-
-        console.log('✅ Subscribed to /topic/room/' + roomId);
       },
-
       onStompError: (frame) => {
-        console.error('❌ STOMP error:', frame);
         setError('Connection to chat server lost');
         setConnected(false);
       },
-
       onWebSocketError: (error) => {
-        console.error('❌ WebSocket error:', error);
         setError('WebSocket connection failed');
         setConnected(false);
       },
-
-      onDisconnect: () => {
-        console.log('🔌 Disconnected from WebSocket');
-        setConnected(false);
-      },
+      onDisconnect: () => setConnected(false),
     });
 
     client.activate();
     stompClientRef.current = client;
 
     return () => {
-      console.log('🧹 Cleaning up WebSocket connection');
       if (client.connected) {
         client.deactivate();
       }
     };
   }, [roomId, username]);
 
-  // Auto-scroll to latest message
+  // 3. Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Send text message
+  // 4. Send Message
   const sendMessage = (e) => {
     e.preventDefault();
     const trimmedContent = newMessage.trim();
-    if (!trimmedContent) return;
-
-    if (!stompClientRef.current?.connected) {
-      setError('Not connected to chat server. Please refresh.');
-      return;
-    }
+    if (!trimmedContent || !stompClientRef.current?.connected) return;
 
     try {
       const payload = {
@@ -157,269 +127,165 @@ const ChatRoom = () => {
 
       setNewMessage('');
     } catch (err) {
-      console.error('Send error:', err);
       setError('Failed to send message');
     }
   };
 
-  // Photo upload handler
-  // ... inside ChatRoom component ...
+  // 5. Photo Upload
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-// Photo upload handler (defined as async function)
-const handlePhotoUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  if (!file.type.startsWith('image/')) {
-    alert('Please select an image file');
-    return;
-  }
-
-  if (file.size > 10 * 1024 * 1024) { // 10MB limit
-    alert('File too large (max 10MB)');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('sender', username);
-
-  try {
-    setUploadLoading(true);
-    const response = await axios.post(API_ENDPOINTS.UPLOAD_PHOTO(roomId), formData);
-    
-    console.log('Photo uploaded successfully:', response.data);
-    alert('Photo uploaded! It will appear in chat shortly.');
-  } catch (err) {
-    console.error('Photo upload error:', err);
-    if (err.response?.status === 413) {
-      alert('File too large! Try a smaller image (max 10MB).');
-    } else if (err.response?.status === 404) {
-      alert('Room not found or upload endpoint error. Check room ID.');
-    } else {
-      alert('Failed to upload photo. Please try again.');
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
     }
-  } finally {
-    setUploadLoading(false);
-    e.target.value = ''; // Reset input for next upload
-  }
-};
 
-// Fetch effect (no need for async here, since fetchRoomData is async)
-useEffect(() => {
-  if (!username) {
-    navigate('/');
-    return;
-  }
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('sender', username);
 
-  const fetchRoomData = async () => {
     try {
-      const response = await axios.get(API_ENDPOINTS.GET_ROOM(roomId));
-      console.log('📦 Room data:', response.data);
-      setRoom(response.data);
-      setMessages(response.data.messages || []);
-      setError('');
+      setUploadLoading(true);
+      await axios.post(API_ENDPOINTS.UPLOAD_PHOTO(roomId), formData);
+      alert('Photo uploaded!');
     } catch (err) {
-      setError('Failed to load room. It may not exist.');
-      console.error('Fetch room error:', err);
+      alert('Failed to upload photo.');
     } finally {
-      setLoading(false);
+      setUploadLoading(false);
+      e.target.value = '';
     }
   };
 
-  fetchRoomData();
-}, [roomId, username, navigate]);
-
-// ... rest of your code (WebSocket, sendMessage, etc.) ...
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="h-screen bg-black flex items-center justify-center">
         <div className="nebula-bg" />
         <div className="text-center z-10">
           <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-purple-400 text-xl font-bold tracking-widest animate-pulse">
-            ENTERING SECTOR...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !room) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-        <div className="nebula-bg" />
-        <div className="z-10 text-center">
-          <p className="text-red-400 text-2xl mb-4">{error}</p>
-          <button 
-            onClick={() => navigate('/chats')} 
-            className="btn-gradient px-8 py-3 rounded-full hover:scale-105 transition-transform"
-          >
-            Back to Transmissions
-          </button>
+          <p className="text-purple-400 text-xl font-bold tracking-widest animate-pulse uppercase">Entering Sector...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden relative">
-      <div className="nebula-bg absolute inset-0 z-0" />
-      <div className="stars-overlay absolute inset-0 z-0" />
+    // Fixed: h-[100svh] prevents mobile browsers from hiding the bottom/top of the app
+    <div className="h-[100svh] w-full flex flex-col overflow-hidden relative bg-[#050208]">
+      <div className="nebula-bg absolute inset-0 z-0 opacity-40" />
+      <div className="stars-overlay absolute inset-0 z-0 opacity-20" />
 
-      <header className="relative z-10 p-4 md:p-6 border-b border-white/10 bg-black/30 backdrop-blur-md flex justify-between items-center">
-        <header className="relative z-10 p-3 md:p-6 border-b border-white/10 bg-black/30 backdrop-blur-md flex justify-between items-center gap-2">
-  <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-shrink">
-    <button 
-      onClick={() => navigate('/chats')} 
-      className="p-2 hover:bg-white/10 rounded-full transition-colors flex-shrink-0"
-    >
-      <ChevronLeft className="w-6 h-6 text-white" />
-    </button>
-    
-    <div className="flex items-center gap-3 min-w-0">
-      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-lg md:text-xl flex-shrink-0">
-        🛰️
-      </div>
-      <div className="min-w-0">
-        {/* Adjusted text size and removed excessive truncation constraints */}
-        <h3 className="text-white font-bold truncate text-sm md:text-base">
-          {roomId}
-        </h3>
-        <div className="flex items-center gap-2">
-          <div className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse flex-shrink-0`} />
-          <p className="text-[9px] md:text-[10px] text-purple-400 uppercase tracking-wider whitespace-nowrap">
-            {connected ? 'Connected' : 'Disconnected'}
-          </p>
-          {room && (
-            <div className="hidden xs:flex items-center gap-1 text-[10px] text-gray-400 flex-shrink-0">
-              <Users className="w-3 h-3" />
-              {room.members?.length || 0}
+      {/* HEADER: Anchored at the top using sticky */}
+      <header className="sticky top-0 z-30 w-full p-3 md:p-6 border-b border-white/10 bg-black/80 backdrop-blur-xl flex justify-between items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+          <button 
+            onClick={() => navigate('/chats')} 
+            className="p-2 hover:bg-white/10 rounded-full transition-colors flex-shrink-0"
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </button>
+          
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-lg flex-shrink-0 shadow-lg shadow-purple-500/20">
+              🛰️
             </div>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div className="flex items-center flex-shrink-0">
-    <button 
-      onClick={copyRoomId}
-      className="flex items-center gap-2 px-2 py-1.5 md:px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all group"
-      title="Copy Room ID"
-    >
-      <span className="text-[10px] text-gray-400 font-mono uppercase tracking-tighter hidden lg:block">
-        ID: {roomId}
-      </span>
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width="14" 
-        height="14" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        className="text-purple-400 group-hover:text-purple-300"
-      >
-        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-      </svg>
-    </button>
-  </div>
-</header>
-      </header>
-
-      {error && room && (
-        <div className="relative z-10 bg-red-500/10 border-b border-red-500/30 px-4 py-2">
-          <p className="text-red-400 text-xs text-center">{error}</p>
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar z-10">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500">
-              <p className="text-sm mb-2">No messages yet</p>
-              <p className="text-xs">Start the conversation! 🚀</p>
-            </div>
-          </div>
-        ) : (
-          messages.map((msg, index) => (
-            <div
-              key={`${msg.sender}-${msg.timestamp}-${index}`}
-              className={`flex ${msg.sender === username ? 'justify-end' : 'justify-start'} animate-fade-in`}
-            >
-              <div
-                className={`max-w-[70%] p-4 rounded-2xl text-sm shadow-lg ${
-                  msg.sender === username
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-tr-none'
-                    : 'bg-white/10 text-white rounded-tl-none border border-white/10 backdrop-blur-sm'
-                }`}
-              >
-                {msg.sender !== username && (
-                  <div className="font-bold text-xs mb-1 text-purple-300">
-                    {msg.sender}
+            <div className="min-w-0 flex flex-col">
+              <h3 className="text-white font-bold text-sm md:text-base truncate leading-tight">
+                {roomId}
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+                <span className="text-[10px] text-purple-400 uppercase tracking-widest font-bold">
+                  {connected ? 'Active' : 'Offline'}
+                </span>
+                {room && (
+                  <div className="hidden xs:flex items-center gap-1 text-[10px] text-white/30 ml-1 border-l border-white/10 pl-2">
+                    <Users className="w-2.5 h-2.5" />
+                    {room.members?.length || 0}
                   </div>
                 )}
-                <p className="break-words">{msg.content}</p>
-
-                {/* Photo display */}
-                {msg.mediaUrl && msg.type === 'IMAGE' && (
-                  <img
-                    src={msg.mediaUrl}
-                    alt={`Shared by ${msg.sender}`}
-                    className="max-w-full rounded-lg mt-2 object-contain"
-                    loading="lazy"
-                    onError={(e) => console.error('Image failed to load:', msg.mediaUrl)}
-                  />
-                )}
-
-                <div className="text-[10px] opacity-60 mt-2 text-right">
-                  {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  }) : 'Just now'}
-                </div>
               </div>
             </div>
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          </div>
+        </div>
+        
+        <button 
+          onClick={copyRoomId} 
+          className="p-2 md:px-3 md:py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all flex-shrink-0 active:scale-95"
+        >
+          <Paperclip className="w-4 h-4 text-purple-400 rotate-45" />
+        </button>
+      </header>
 
-      <footer className="relative z-10 p-4 md:p-6 bg-black/40 backdrop-blur-md border-t border-white/10">
-        <form onSubmit={sendMessage} className="flex items-center gap-3 max-w-4xl mx-auto">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={connected ? `Message #${roomId}...` : 'Connecting...'}
-            disabled={!connected}
-            className="flex-1 bg-white/5 border border-white/10 rounded-full py-3 px-6 outline-none focus:border-purple-500/50 text-white placeholder-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          />
+      {/* CHAT AREA: Custom padding for desktop */}
+      <main className="flex-1 overflow-y-auto p-4 md:px-0 custom-scrollbar z-10 relative">
+        <div className="max-w-4xl mx-auto md:px-6 space-y-4 pb-4">
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-gray-500 text-sm italic">
+              No transmissions in this sector yet...
+            </div>
+          ) : (
+            messages.map((msg, index) => (
+              <div 
+                key={`${msg.sender}-${index}`} 
+                className={`flex ${msg.sender === username ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}
+              >
+                <div className={`max-w-[85%] md:max-w-[65%] p-3 md:p-4 rounded-2xl text-sm ${
+                  msg.sender === username 
+                    ? 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-tr-none shadow-lg shadow-purple-500/10' 
+                    : 'bg-white/10 text-white rounded-tl-none border border-white/5 backdrop-blur-md'
+                }`}>
+                  {msg.sender !== username && (
+                    <p className="text-[10px] font-black text-purple-400 uppercase mb-1 tracking-tighter">{msg.sender}</p>
+                  )}
+                  <p className="break-words leading-relaxed">{msg.content}</p>
+                  {msg.mediaUrl && (
+                    <img 
+                      src={msg.mediaUrl} 
+                      alt="shared" 
+                      className="mt-2 rounded-lg max-h-60 w-full object-cover border border-white/10" 
+                    />
+                  )}
+                  <p className="text-[9px] opacity-40 mt-1 text-right">
+                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </main>
 
-          {/* Photo Upload Button */}
-          <label 
-            htmlFor="photo-upload" 
-            className={`cursor-pointer p-3 rounded-full transition-colors ${!connected || uploadLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/10'}`}
-          >
+      {/* FOOTER: Anchored at the bottom */}
+      <footer className="relative z-30 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 flex-shrink-0">
+        <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex items-center gap-2 md:gap-4">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={connected ? `Message #${roomId}...` : "Connecting..."}
+              disabled={!connected}
+              className="w-full bg-white/5 border border-white/10 rounded-full py-3 px-5 md:px-8 outline-none focus:border-purple-500/50 text-white text-sm transition-all"
+            />
+          </div>
+          
+          <label className={`cursor-pointer p-3 rounded-full transition-colors flex-shrink-0 ${uploadLoading ? 'animate-pulse opacity-50' : 'hover:bg-white/10'}`}>
             <Paperclip className="w-5 h-5 text-purple-400" />
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handlePhotoUpload} 
+              className="hidden" 
+              disabled={!connected || uploadLoading}
+            />
           </label>
-          <input
-            id="photo-upload"
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-            disabled={!connected || uploadLoading}
-            className="hidden"
-          />
 
-          <button
-            type="submit"
-            disabled={!newMessage.trim() || !connected}
-            className="btn-gradient p-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95 transition-transform"
+          <button 
+            type="submit" 
+            disabled={!newMessage.trim() || !connected} 
+            className="bg-purple-600 p-3 md:p-4 rounded-full hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/20"
           >
             <Send className="w-5 h-5 text-white" />
           </button>
