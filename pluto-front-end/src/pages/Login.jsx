@@ -92,7 +92,8 @@ const Login = () => {
     <div 
       ref={containerRef}
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-      className="fixed inset-0 w-full h-[100dvh] flex flex-col items-center justify-center p-4 overflow-hidden bg-[#050208] cursor-default touch-none"
+      className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center p-4 overflow-hidden bg-[#050208] cursor-default"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {/* BACKGROUND EFFECTS - Always Purple */}
       <div 
@@ -105,26 +106,26 @@ const Login = () => {
         <div className="w-full h-full bg-[radial-gradient(white_1px,transparent_1px)] bg-[length:100px_100px]" />
       </div>
 
-      <div className="relative z-20 flex flex-col items-center w-full max-w-[400px] animate-in fade-in zoom-in duration-700">
+      <div className="relative z-20 flex flex-col items-center w-full max-w-[360px] sm:max-w-[400px]">
         
         {/* Header - Always Purple Star */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <div className="flex justify-center items-center gap-2 mb-1">
-            <h1 className="text-5xl font-black tracking-tighter text-white select-none">PLUTO</h1>
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white select-none">PLUTO</h1>
             <Sparkles 
-              className="w-6 h-6 animate-pulse text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" 
+              className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" 
             />
           </div>
-          <div className="flex items-center justify-center gap-2 text-white/40 font-mono text-[8px] tracking-[0.3em] uppercase">
-            <Terminal className="w-3 h-3" />
+          <div className="flex items-center justify-center gap-2 text-white/40 font-mono text-[7px] sm:text-[8px] tracking-[0.3em] uppercase">
+            <Terminal className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             <span>{systemStatuses[statusIndex]}</span>
           </div>
         </div>
 
         {/* Card Form */}
-        <div className="w-full glass-card rounded-[40px] p-8 flex flex-col items-center border border-white/10 shadow-2xl backdrop-blur-3xl bg-white/5">
+        <div className="w-full glass-card rounded-3xl sm:rounded-[40px] p-6 sm:p-8 flex flex-col items-center border border-white/10 shadow-2xl backdrop-blur-3xl bg-white/5">
           
-          <form className="w-full space-y-4" onSubmit={handleAuth}>
+          <form className="w-full space-y-3 sm:space-y-4" onSubmit={handleAuth}>
             
             {/* Username */}
             <div className="space-y-1">
@@ -136,7 +137,8 @@ const Login = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
+                  inputMode="text"
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
                 />
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
               </div>
@@ -153,7 +155,8 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
-                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all"
+                    inputMode="email"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all"
                   />
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                 </div>
@@ -170,7 +173,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete={isLogin ? "current-password" : "new-password"}
-                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
                 />
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                 <Rocket className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-500 pointer-events-none ${password ? 'text-purple-500' : 'opacity-0'}`} />
@@ -186,7 +189,7 @@ const Login = () => {
             <button 
               type="submit"
               disabled={loading}
-              className={`w-full py-4 rounded-xl font-black text-[10px] tracking-[0.3em] transition-all relative overflow-hidden group
+              className={`w-full py-3.5 sm:py-4 rounded-xl font-black text-[10px] tracking-[0.3em] transition-all relative overflow-hidden group
                 ${loading 
                   ? 'bg-purple-900/40 text-purple-300/50 cursor-not-allowed' 
                   : 'bg-gradient-to-r from-purple-600/20 to-indigo-600/20 text-purple-100 border border-purple-500/30 hover:border-purple-400/60 hover:from-purple-600/40 hover:to-indigo-600/40 active:scale-95'
@@ -204,7 +207,7 @@ const Login = () => {
               setIsLogin(!isLogin);
               setError('');
             }}
-            className="mt-6 flex items-center gap-2 text-gray-600 hover:text-white text-[8px] uppercase tracking-widest font-black transition-all group"
+            className="mt-4 sm:mt-6 flex items-center gap-2 text-gray-600 hover:text-white text-[8px] uppercase tracking-widest font-black transition-all group"
           >
             <Fingerprint className="w-3 h-3 group-hover:text-purple-400 transition-colors" />
             {isLogin ? "Need a cosmic handle? Sign Up" : "Already registered? Login"}
@@ -212,7 +215,7 @@ const Login = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 flex flex-col items-center gap-3 opacity-50">
+        <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 opacity-50">
           <p className="text-[8px] text-gray-700 tracking-[0.4em] uppercase font-bold select-none">©ishandesale-2026</p>
         </div>
       </div>
