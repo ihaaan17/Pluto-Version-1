@@ -269,62 +269,66 @@ useEffect(() => {
       <div className="stars-overlay absolute inset-0 z-0" />
 
       <header className="relative z-10 p-4 md:p-6 border-b border-white/10 bg-black/30 backdrop-blur-md flex justify-between items-center">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <button 
-            onClick={() => navigate('/chats')} 
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
-          >
-            <ChevronLeft className="w-6 h-6 text-white" />
-          </button>
-          
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-xl flex-shrink-0">
-              🛰️
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-white font-bold truncate text-sm">{roomId}</h3>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
-                <p className="text-[10px] text-purple-400 uppercase tracking-wider">
-                  {connected ? 'Connected' : 'Disconnected'}
-                </p>
-                {room && (
-                  <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                    <Users className="w-3 h-3" />
-                    {room.members?.length || 0}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Replace the MoreVertical button with this */}
-<div className="flex items-center gap-2">
-  <button 
-    onClick={copyRoomId}
-    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all group"
-    title="Copy Room ID"
-  >
-    <span className="text-[10px] text-gray-400 font-mono uppercase tracking-tighter hidden sm:block">
-      ID: {roomId}
-    </span>
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="16" 
-      height="16" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className="text-purple-400 group-hover:text-purple-300"
+        <header className="relative z-10 p-3 md:p-6 border-b border-white/10 bg-black/30 backdrop-blur-md flex justify-between items-center gap-2">
+  <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-shrink">
+    <button 
+      onClick={() => navigate('/chats')} 
+      className="p-2 hover:bg-white/10 rounded-full transition-colors flex-shrink-0"
     >
-      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-    </svg>
-  </button>
-</div>
+      <ChevronLeft className="w-6 h-6 text-white" />
+    </button>
+    
+    <div className="flex items-center gap-3 min-w-0">
+      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-lg md:text-xl flex-shrink-0">
+        🛰️
+      </div>
+      <div className="min-w-0">
+        {/* Adjusted text size and removed excessive truncation constraints */}
+        <h3 className="text-white font-bold truncate text-sm md:text-base">
+          {roomId}
+        </h3>
+        <div className="flex items-center gap-2">
+          <div className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse flex-shrink-0`} />
+          <p className="text-[9px] md:text-[10px] text-purple-400 uppercase tracking-wider whitespace-nowrap">
+            {connected ? 'Connected' : 'Disconnected'}
+          </p>
+          {room && (
+            <div className="hidden xs:flex items-center gap-1 text-[10px] text-gray-400 flex-shrink-0">
+              <Users className="w-3 h-3" />
+              {room.members?.length || 0}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div className="flex items-center flex-shrink-0">
+    <button 
+      onClick={copyRoomId}
+      className="flex items-center gap-2 px-2 py-1.5 md:px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all group"
+      title="Copy Room ID"
+    >
+      <span className="text-[10px] text-gray-400 font-mono uppercase tracking-tighter hidden lg:block">
+        ID: {roomId}
+      </span>
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="14" 
+        height="14" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        className="text-purple-400 group-hover:text-purple-300"
+      >
+        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+      </svg>
+    </button>
+  </div>
+</header>
       </header>
 
       {error && room && (
