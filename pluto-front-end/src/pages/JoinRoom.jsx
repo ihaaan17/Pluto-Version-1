@@ -19,9 +19,53 @@ const JoinRoom = () => {
     if (!username) navigate('/');
   }, [username, navigate]);
 
+  // Prevent zoom on mobile
+  useEffect(() => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }
+
+    return () => {
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+      }
+    };
+  }, []);
+
+  // Handle input blur to reset scroll position
+  useEffect(() => {
+    const handleInputFocus = (e) => {
+      e.target.style.fontSize = '16px';
+    };
+
+    const handleInputBlur = () => {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }, 300);
+    };
+
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      input.addEventListener('focus', handleInputFocus);
+      input.addEventListener('blur', handleInputBlur);
+    });
+
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('focus', handleInputFocus);
+        input.removeEventListener('blur', handleInputBlur);
+      });
+    };
+  }, [roomType]);
+
   // ✅ UPDATED: Separate logic for create vs join
   const handleCreateRoom = async (e) => {
     e.preventDefault();
+    document.activeElement?.blur();
+    
     const id = roomName.trim();
     if (!id) {
       setError('IDENTIFICATION REQUIRED');
@@ -33,11 +77,9 @@ const JoinRoom = () => {
 
     try {
       const payload = { roomId: id, username: username };
-      // Use /create endpoint
       const response = await axios.post(API_ENDPOINTS.CREATE_ROOM, payload);
       navigate(`/chat/${response.data.roomId}`);
     } catch (err) {
-      // Handle specific error for existing room
       if (err.response?.status === 409) {
         setError('ROOM NAME ALREADY EXISTS. CHOOSE ANOTHER.');
       } else {
@@ -50,6 +92,8 @@ const JoinRoom = () => {
 
   const handleJoinRoom = async (e) => {
     e.preventDefault();
+    document.activeElement?.blur();
+    
     const id = roomIdToJoin.trim();
     if (!id) {
       setError('IDENTIFICATION REQUIRED');
@@ -61,11 +105,9 @@ const JoinRoom = () => {
 
     try {
       const payload = { roomId: id, username: username };
-      // Use /join endpoint
       const response = await axios.post(API_ENDPOINTS.JOIN_ROOM, payload);
       navigate(`/chat/${response.data.roomId}`);
     } catch (err) {
-      // Handle specific error for non-existent room
       if (err.response?.status === 404) {
         setError('ROOM NOT FOUND. CHECK THE CODE.');
       } else {
@@ -79,7 +121,7 @@ const JoinRoom = () => {
   return (
     <div 
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-      className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden bg-[#050208]"
+      className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center p-4 overflow-hidden bg-[#050208]"
     >
       {/* 🌌 CONSISTENT BACKGROUND STACK */}
       <div className="nebula-bg" />
@@ -94,32 +136,32 @@ const JoinRoom = () => {
       />
 
       {/* 🖥️ MODAL CARD */}
-      <div className="relative z-20 w-full max-w-[460px] premium-glass p-8 md:p-10 rounded-[2.5rem] border-white/5 animate-in fade-in zoom-in duration-500">
+      <div className="relative z-20 w-full max-w-[380px] sm:max-w-[460px] premium-glass p-6 sm:p-8 md:p-10 rounded-3xl sm:rounded-[2.5rem] border-white/5">
         
         {/* Close Button */}
         <button 
           onClick={() => navigate('/chats')}
-          className="absolute right-8 top-8 p-2 text-white/20 hover:text-white/60 hover:bg-white/5 rounded-xl transition-all"
+          className="absolute right-6 sm:right-8 top-6 sm:top-8 p-2 text-white/20 hover:text-white/60 hover:bg-white/5 rounded-xl transition-all"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header */}
-        <div className="text-center mb-10">
-          <div className="flex justify-center mb-4">
-             <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20">
-                <Radio className="w-6 h-6 text-purple-400 animate-pulse" />
+        <div className="text-center mb-8 sm:mb-10">
+          <div className="flex justify-center mb-3 sm:mb-4">
+             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20">
+                <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 animate-pulse" />
              </div>
           </div>
-          <p className="text-[9px] text-purple-500/60 font-black uppercase tracking-[0.4em] mb-1">Subspace Frequency</p>
-          <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Initialize Channel</h2>
+          <p className="text-[8px] sm:text-[9px] text-purple-500/60 font-black uppercase tracking-[0.4em] mb-1">Subspace Frequency</p>
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase select-none">Initialize Channel</h2>
         </div>
 
         {/* Toggle - Terminal Style */}
-        <div className="flex p-1.5 bg-black/40 rounded-2xl mb-10 border border-white/5">
+        <div className="flex p-1.5 bg-black/40 rounded-2xl mb-6 sm:mb-8 border border-white/5">
           <button 
             onClick={() => { setRoomType('group'); setError(''); setRoomName(''); }}
-            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+            className={`flex-1 py-2.5 sm:py-3 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
               roomType === 'group' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
@@ -127,7 +169,7 @@ const JoinRoom = () => {
           </button>
           <button 
             onClick={() => { setRoomType('join'); setError(''); setRoomIdToJoin(''); }}
-            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+            className={`flex-1 py-2.5 sm:py-3 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
               roomType === 'join' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
@@ -136,9 +178,9 @@ const JoinRoom = () => {
         </div>
 
         {/* Dynamic Form - ✅ UPDATED: Different handlers for create vs join */}
-        <form onSubmit={roomType === 'group' ? handleCreateRoom : handleJoinRoom} className="space-y-8">
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black ml-1">
+        <form onSubmit={roomType === 'group' ? handleCreateRoom : handleJoinRoom} className="space-y-6 sm:space-y-8">
+          <div className="space-y-2 sm:space-y-3">
+            <label className="flex items-center gap-2 text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black ml-1 select-none">
               <Terminal className="w-3 h-3" />
               {roomType === 'group' ? 'Galaxy Designation' : 'Frequency Code'}
             </label>
@@ -155,15 +197,16 @@ const JoinRoom = () => {
                   }
                 }}
                 placeholder={roomType === 'group' ? "e.g. Andromeda Station" : "Enter room code..."} 
-                className="w-full bg-black/40 border border-white/10 rounded-2xl py-5 px-6 outline-none focus:border-purple-500/50 text-[11px] font-bold text-white transition-all placeholder:text-gray-700 tracking-wide"
+                style={{ fontSize: '16px' }}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 sm:py-5 px-5 sm:px-6 outline-none focus:border-purple-500/50 font-bold text-white transition-all placeholder:text-gray-700 tracking-wide"
                 required
               />              
               {roomType === 'group' ? 
-                <Sparkles className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500/30" /> : 
-                <Lock className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500/30" />
+                <Sparkles className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500/30 pointer-events-none" /> : 
+                <Lock className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500/30 pointer-events-none" />
               }
             </div>
-            <p className="text-[9px] text-gray-600 ml-1">
+            <p className="text-[8px] sm:text-[9px] text-gray-600 ml-1">
               {roomType === 'group' 
                 ? 'Room names are case-insensitive. Use hyphens for spaces.' 
                 : 'Room codes are case-insensitive'}
@@ -173,15 +216,15 @@ const JoinRoom = () => {
           <button 
             type="submit" 
             disabled={loading}
-            className="auth-button w-full group py-5"
+            className="auth-button w-full group py-4 sm:py-5"
           >
             {loading ? (
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-3 justify-center">
                 <Terminal className="w-4 h-4 animate-spin" />
                 Processing...
               </span>
             ) : (
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-3 justify-center">
                 {roomType === 'group' ? 'CREATE ROOM' : 'JOIN ROOM'}
                 <Rocket className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform text-purple-400" />
               </span>
@@ -191,15 +234,15 @@ const JoinRoom = () => {
 
         {/* Error Overlay */}
         {error && (
-          <div className="mt-8 p-4 bg-red-500/5 border border-red-500/20 rounded-2xl animate-in slide-in-from-bottom-2 duration-300">
-            <p className="text-red-400 text-[10px] font-bold tracking-widest text-center uppercase">{error}</p>
+          <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-red-500/5 border border-red-500/20 rounded-2xl animate-in slide-in-from-bottom-2 duration-300">
+            <p className="text-red-400 text-[9px] sm:text-[10px] font-bold tracking-widest text-center uppercase">{error}</p>
           </div>
         )}
       </div>
 
       {/* Footer Decoration */}
       <div className="fixed bottom-8 opacity-10 flex gap-10 pointer-events-none">
-        <p className="text-[8px] font-black tracking-[1em] text-white">SYSTEM_STATUS_NOMINAL</p>
+        <p className="text-[8px] font-black tracking-[1em] text-white select-none">SYSTEM_STATUS_NOMINAL</p>
       </div>
     </div>
   );
