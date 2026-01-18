@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Sparkles, Terminal, Lock, User, Mail, Fingerprint } from 'lucide-react';
 import axios from 'axios';
@@ -14,6 +14,7 @@ const Login = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [statusIndex, setStatusIndex] = useState(0);
   const navigate = useNavigate();
+  const containerRef = useRef(null);
 
   // The text still changes to reflect the mode, but the colors will stay purple
   const systemStatuses = isLogin 
@@ -27,6 +28,30 @@ const Login = () => {
     return () => clearInterval(timer);
   }, [isLogin, systemStatuses.length]);
 
+  // Handle input blur to reset zoom on mobile
+  useEffect(() => {
+    const handleInputBlur = () => {
+      // Small delay to ensure keyboard is hidden
+      setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = 0;
+          window.scrollTo(0, 0);
+        }
+      }, 100);
+    };
+
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      input.addEventListener('blur', handleInputBlur);
+    });
+
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('blur', handleInputBlur);
+      });
+    };
+  }, []);
+
   const handleAuth = async (e) => {
     e.preventDefault();
     const trimmed = username.trim();
@@ -34,6 +59,9 @@ const Login = () => {
       setError('Required data streams missing.');
       return;
     }
+    
+    // Blur all inputs to dismiss keyboard
+    document.activeElement?.blur();
     
     setLoading(true);
     setError('');
@@ -62,8 +90,9 @@ const Login = () => {
 
   return (
     <div 
+      ref={containerRef}
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-      className="relative h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden bg-[#050208] cursor-default"
+      className="fixed inset-0 w-full h-[100dvh] flex flex-col items-center justify-center p-4 overflow-hidden bg-[#050208] cursor-default touch-none"
     >
       {/* BACKGROUND EFFECTS - Always Purple */}
       <div 
@@ -81,7 +110,7 @@ const Login = () => {
         {/* Header - Always Purple Star */}
         <div className="text-center mb-6">
           <div className="flex justify-center items-center gap-2 mb-1">
-            <h1 className="text-5xl font-black tracking-tighter text-white">PLUTO</h1>
+            <h1 className="text-5xl font-black tracking-tighter text-white select-none">PLUTO</h1>
             <Sparkles 
               className="w-6 h-6 animate-pulse text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" 
             />
@@ -99,49 +128,52 @@ const Login = () => {
             
             {/* Username */}
             <div className="space-y-1">
-              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-black ml-1">Identity Signature</label>
+              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-black ml-1 select-none">Identity Signature</label>
               <div className="relative">
                 <input 
                   type="text" 
                   placeholder="Enter handle..." 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="username"
                   className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
                 />
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
               </div>
             </div>
 
             {/* Email - ONLY SHOWN DURING SIGN UP */}
             {!isLogin && (
               <div className="space-y-1 animate-in slide-in-from-top-2 duration-300">
-                <label className="text-[9px] text-gray-500 uppercase tracking-widest font-black ml-1">Comms Link</label>
+                <label className="text-[9px] text-gray-500 uppercase tracking-widest font-black ml-1 select-none">Comms Link</label>
                 <div className="relative">
                   <input 
                     type="email" 
                     placeholder="star@sector.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all"
                   />
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                 </div>
               </div>
             )}
 
             {/* Password */}
             <div className="space-y-1">
-              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-black ml-1">Access Key</label>
+              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-black ml-1 select-none">Access Key</label>
               <div className="relative">
                 <input 
                   type="password" 
                   placeholder="••••••••" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   className="w-full bg-black/40 border border-white/5 rounded-xl py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
                 />
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                <Rocket className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-500 ${password ? 'text-purple-500' : 'opacity-0'}`} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
+                <Rocket className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-500 pointer-events-none ${password ? 'text-purple-500' : 'opacity-0'}`} />
               </div>
             </div>
 
@@ -181,7 +213,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="mt-8 flex flex-col items-center gap-3 opacity-50">
-          <p className="text-[8px] text-gray-700 tracking-[0.4em] uppercase font-bold">©ishandesale-2026</p>
+          <p className="text-[8px] text-gray-700 tracking-[0.4em] uppercase font-bold select-none">©ishandesale-2026</p>
         </div>
       </div>
     </div>
