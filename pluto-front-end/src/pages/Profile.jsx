@@ -123,9 +123,9 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="relative z-20 max-w-5xl mx-auto w-full space-y-6 pb-20">
+      <main className="relative z-20 max-w-5xl mx-auto w-full space-y-6 pb-10">
         
-        {/* 👤 PRIMARY PROFILE CARD */}
+        {/* PRIMARY PROFILE CARD */}
         <section className="premium-glass p-8 md:p-10 rounded-[2.5rem] border-white/5 overflow-hidden">
           <div className="flex flex-col md:flex-row items-center gap-10">
             <div className="relative">
@@ -166,7 +166,6 @@ const Profile = () => {
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 📝 BIO INFORMATION (LOGIC RESTORED) */}
           <section className="premium-glass p-8 rounded-[2rem] border-white/5">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-3">
@@ -208,7 +207,6 @@ const Profile = () => {
             )}
           </section>
 
-          {/* 🔐 SECURITY SECTION (LOGIC RESTORED) */}
           <section className="premium-glass p-8 rounded-[2rem] border-white/5">
             <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-3 mb-8">
               <Lock className="w-4 h-4 text-purple-500" /> Security Protocol
@@ -230,7 +228,6 @@ const Profile = () => {
             )}
           </section>
 
-          {/* ⚠️ DANGER ZONE (LOGIC RESTORED) */}
           <section className="premium-glass p-8 rounded-[2rem] border-red-500/20 lg:col-span-2">
             <h3 className="text-sm font-black text-red-500 uppercase tracking-[0.2em] flex items-center gap-3 mb-6">
               <Trash2 className="w-4 h-4" /> Critical: Decommission Account
@@ -249,28 +246,29 @@ const Profile = () => {
           </section>
         </div>
 
-        {/* 🌠 DEEP SPACE ANIMATION (RE-POSITIONED HIGHER) */}
+        {/* 🌠 DEEP SPACE ANIMATION (LARGER ROCKET) */}
         <motion.section 
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: false, amount: 0.1 }}
-          className="relative h-[250px] w-full flex flex-col items-center justify-center pt-10"
+          className="relative h-[350px] w-full flex flex-col items-center justify-center pt-5"
         >
           <div className="absolute flex items-center justify-center pointer-events-none">
             <motion.div 
               animate={{ rotate: 360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-              className="w-72 h-72 rounded-full border border-purple-500/10 border-dashed"
+              transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+              className="w-80 h-80 rounded-full border border-purple-500/10 border-dashed"
             />
           </div>
 
           <motion.div 
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ y: [0, -25, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
             className="relative z-30 flex flex-col items-center"
           >
-            <Rocket className="w-14 h-14 text-purple-500 rotate-[-45deg] filter drop-shadow-[0_0_15px_rgba(168,85,247,0.4)] mb-4" />
-            <span className="text-purple-400/50 font-black text-[9px] tracking-[0.8em] uppercase">
+            {/* Rocket is now w-24 h-24 */}
+            <Rocket className="w-24 h-24 text-purple-500 rotate-[-45deg] filter drop-shadow-[0_0_25px_rgba(168,85,247,0.6)] mb-6" />
+            <span className="text-purple-400 font-black text-[11px] tracking-[0.9em] uppercase opacity-60">
               Deep Space Linked
             </span>
           </motion.div>
@@ -278,7 +276,7 @@ const Profile = () => {
 
       </main>
 
-      {/* 🔔 SYSTEM TOASTS (LOGIC RESTORED) */}
+      {/* 🔔 SYSTEM TOASTS */}
       {(success || error) && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-5">
             <div className={`px-8 py-4 rounded-2xl border font-black uppercase text-[10px] flex items-center gap-4 shadow-2xl ${
