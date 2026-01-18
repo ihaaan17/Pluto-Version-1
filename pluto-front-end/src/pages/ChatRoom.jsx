@@ -25,6 +25,48 @@ const ChatRoom = () => {
     alert('Room ID copied to clipboard!');
   };
 
+  // Prevent zoom on mobile
+  useEffect(() => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }
+
+    return () => {
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+      }
+    };
+  }, []);
+
+  // Handle input focus/blur for mobile
+  useEffect(() => {
+    const handleInputFocus = (e) => {
+      e.target.style.fontSize = '16px';
+    };
+
+    const handleInputBlur = () => {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }, 300);
+    };
+
+    const inputs = document.querySelectorAll('input[type="text"]');
+    inputs.forEach(input => {
+      input.addEventListener('focus', handleInputFocus);
+      input.addEventListener('blur', handleInputBlur);
+    });
+
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('focus', handleInputFocus);
+        input.removeEventListener('blur', handleInputBlur);
+      });
+    };
+  }, []);
+
   // 1. Fetch Room Data
   useEffect(() => {
     if (!username) {
@@ -110,6 +152,8 @@ const ChatRoom = () => {
   // 4. Send Message
   const sendMessage = (e) => {
     e.preventDefault();
+    document.activeElement?.blur(); // Dismiss keyboard
+    
     const trimmedContent = newMessage.trim();
     if (!trimmedContent || !stompClientRef.current?.connected) return;
 
@@ -218,8 +262,8 @@ const ChatRoom = () => {
       </header>
 
       {/* CHAT AREA: Custom padding for desktop + top padding for fixed header */}
-      <main className="flex-1 overflow-y-auto p-4 md:px-0 custom-scrollbar z-10 relative pt-[88px] md:pt-[108px]">
-        <div className="max-w-4xl mx-auto md:px-6 space-y-4 pb-[100px]">
+      <main className="flex-1 overflow-y-auto p-4 md:px-0 custom-scrollbar z-10 relative pt-[88px] md:pt-[108px] pb-[88px]">
+        <div className="max-w-4xl mx-auto md:px-6 space-y-4">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-gray-500 text-sm italic">
               No transmissions in this sector yet...
@@ -267,7 +311,8 @@ const ChatRoom = () => {
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={connected ? `Message #${roomId}...` : "Connecting..."}
               disabled={!connected}
-              className="w-full bg-white/5 border border-white/10 rounded-full py-3 px-5 md:px-8 outline-none focus:border-purple-500/50 text-white text-sm transition-all"
+              style={{ fontSize: '16px' }}
+              className="w-full bg-white/5 border border-white/10 rounded-full py-3 px-5 md:px-8 outline-none focus:border-purple-500/50 text-white transition-all"
             />
           </div>
           
