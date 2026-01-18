@@ -170,13 +170,13 @@ const ChatRoom = () => {
   }
 
   return (
-    // Fixed: h-[100svh] prevents mobile browsers from hiding the bottom/top of the app
-    <div className="h-[100svh] w-full flex flex-col overflow-hidden relative bg-[#050208]">
+    // Fixed: h-[100dvh] uses dynamic viewport height that adjusts to mobile browser bars
+    <div className="h-[100dvh] w-full flex flex-col overflow-hidden relative bg-[#050208]">
       <div className="nebula-bg absolute inset-0 z-0 opacity-40" />
       <div className="stars-overlay absolute inset-0 z-0 opacity-20" />
 
-      {/* HEADER: Anchored at the top using sticky */}
-      <header className="sticky top-0 z-30 w-full p-3 md:p-6 border-b border-white/10 bg-black/80 backdrop-blur-xl flex justify-between items-center gap-2 flex-shrink-0">
+      {/* HEADER: Fixed at the top, always visible */}
+      <header className="fixed top-0 left-0 right-0 z-30 w-full p-3 md:p-6 border-b border-white/10 bg-black/80 backdrop-blur-xl flex justify-between items-center gap-2 flex-shrink-0">
         <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
           <button 
             onClick={() => navigate('/chats')} 
@@ -217,9 +217,9 @@ const ChatRoom = () => {
         </button>
       </header>
 
-      {/* CHAT AREA: Custom padding for desktop */}
-      <main className="flex-1 overflow-y-auto p-4 md:px-0 custom-scrollbar z-10 relative">
-        <div className="max-w-4xl mx-auto md:px-6 space-y-4 pb-4">
+      {/* CHAT AREA: Custom padding for desktop + top padding for fixed header */}
+      <main className="flex-1 overflow-y-auto p-4 md:px-0 custom-scrollbar z-10 relative pt-[88px] md:pt-[108px]">
+        <div className="max-w-4xl mx-auto md:px-6 space-y-4 pb-[100px]">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-gray-500 text-sm italic">
               No transmissions in this sector yet...
@@ -257,8 +257,8 @@ const ChatRoom = () => {
         </div>
       </main>
 
-      {/* FOOTER: Anchored at the bottom */}
-      <footer className="relative z-30 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 flex-shrink-0">
+      {/* FOOTER: Fixed at the bottom */}
+      <footer className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 flex-shrink-0 safe-area-inset-bottom">
         <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex items-center gap-2 md:gap-4">
           <div className="relative flex-1">
             <input
