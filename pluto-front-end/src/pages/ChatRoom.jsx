@@ -21,6 +21,7 @@ const ChatRoom = () => {
   const stompClientRef = useRef(null);
   const username = localStorage.getItem('username');
 
+  /* ================= FETCH & SOCKET LOGIC ================= */
   useEffect(() => {
     if (!username) { navigate('/'); return; }
     axios.get(API_ENDPOINTS.GET_ROOM(roomId))
@@ -57,16 +58,15 @@ const ChatRoom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /* ================= ACTIONS ================= */
   const sendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !connected) return;
     stompClientRef.current.publish({
       destination: `/app/chat/${roomId}`,
       body: JSON.stringify({
-        sender: username,
-        content: newMessage.trim(),
-        timestamp: new Date().toISOString(),
-        type: 'TEXT'
+        sender: username, content: newMessage.trim(),
+        timestamp: new Date().toISOString(), type: 'TEXT'
       }),
     });
     setNewMessage('');
@@ -81,12 +81,8 @@ const ChatRoom = () => {
     try {
       setUploadLoading(true);
       await axios.post(API_ENDPOINTS.UPLOAD_PHOTO(roomId), formData);
-    } catch (err) {
-      alert("Upload failed");
-    } finally {
-      setUploadLoading(false);
-      e.target.value = '';
-    }
+    } catch (err) { alert("Upload failed"); } 
+    finally { setUploadLoading(false); e.target.value = ''; }
   };
 
   const copyRoomId = () => {
@@ -104,63 +100,85 @@ const ChatRoom = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#0a0510] overflow-hidden font-sans">
+      {/* RESTORED: NEBULA BACKGROUND */}
       <div className="nebula-bg absolute inset-0 opacity-40 pointer-events-none z-0 scale-110" />
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-black pointer-events-none z-0" />
 
       {/* ================= HEADER ================= */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/10 bg-black/60 backdrop-blur-2xl flex items-center justify-between px-4 shadow-2xl">
-        <div className="flex items-center gap-3 min-w-0">
-          <button onClick={() => navigate('/chats')} className="text-white">
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/10 bg-black/60 backdrop-blur-2xl flex items-center justify-between px-3 md:px-6 shadow-2xl">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <button onClick={() => navigate('/chats')} className="p-1 text-white hover:bg-white/10 rounded-full transition-all">
             <ChevronLeft className="w-7 h-7" />
           </button>
-          <div className="min-w-0">
-            <h3 className="text-white font-bold text-base truncate">{roomId}</h3>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_8px_rgba(34,197,94,0.6)]`} />
-              <span className="text-[11px] text-purple-300 font-medium tracking-wide">Active now</span>
+          
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 p-[2px] shadow-lg">
+                <div className="w-full h-full rounded-full bg-[#1a1a1a] flex items-center justify-center text-lg">🛰️</div>
+            </div>
+            <div className="min-w-0 flex flex-col">
+              <h3 className="text-white font-bold text-[15px] md:text-lg truncate leading-tight">{roomId}</h3>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_8px_rgba(34,197,94,0.6)]`} />
+                <span className="text-[11px] text-purple-300 font-medium tracking-wide">Active now</span>
+              </div>
             </div>
           </div>
         </div>
 
         <button 
           onClick={copyRoomId} 
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
-            copied ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-white/5 border-white/10 text-white/70'
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all active:scale-90 ${
+            copied ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-white/5 border-white/10 text-white/70'
           }`}
         >
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          <span className="text-xs font-bold hidden sm:block">Copy ID</span>
+          <span className="text-xs font-bold hidden sm:block">{copied ? 'Copied' : 'Copy ID'}</span>
         </button>
       </header>
 
-      {/* ================= MESSAGES ================= */}
+      {/* ================= RESTORED: INSTA-MESSAGES ================= */}
       <main className="flex-1 overflow-y-auto pt-20 pb-6 px-4 z-10 custom-scrollbar">
         <div className="max-w-2xl mx-auto flex flex-col">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex w-full mb-2 ${msg.sender === username ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] px-4 py-2.5 shadow-lg ${
-                msg.sender === username 
-                ? 'bg-gradient-to-br from-purple-600 to-indigo-700 text-white rounded-[20px] rounded-br-[4px]' 
-                : 'bg-[#1f1a29]/90 text-white rounded-[20px] rounded-bl-[4px] border border-white/5'
-              }`}>
-                {msg.sender !== username && <p className="text-[10px] text-purple-400 font-bold mb-0.5">{msg.sender}</p>}
-                <p className="text-[14px] leading-relaxed break-words">{msg.content}</p>
-                {msg.mediaUrl && (
-                  <div className="mt-2 -mx-1 mb-1 rounded-xl overflow-hidden border border-white/10">
-                    <img src={msg.mediaUrl} alt="Shared" className="w-full h-auto max-h-80 object-cover" />
-                  </div>
+          {messages.map((msg, i) => {
+            const isMe = msg.sender === username;
+            return (
+              <div key={i} className={`flex w-full mb-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                {!isMe && (
+                   <div className="w-8 h-8 rounded-full bg-purple-900/30 flex-shrink-0 self-end mr-2 text-[11px] flex items-center justify-center text-purple-300 font-bold border border-purple-500/20 shadow-inner">
+                      {msg.sender.charAt(0).toUpperCase()}
+                   </div>
                 )}
+                
+                <div className={`relative group max-w-[80%] md:max-w-[70%] px-4 py-2.5 shadow-lg transition-all ${
+                  isMe 
+                  ? 'bg-gradient-to-br from-purple-600 to-indigo-700 text-white rounded-[20px] rounded-br-[4px] shadow-purple-900/20' 
+                  : 'bg-[#1f1a29]/90 backdrop-blur-md text-white rounded-[20px] rounded-bl-[4px] border border-white/5'
+                }`}>
+                  {!isMe && <p className="text-[10px] text-purple-400 font-bold mb-0.5 tracking-tight">{msg.sender}</p>}
+                  
+                  <p className="text-[14px] md:text-[15px] leading-relaxed break-words">{msg.content}</p>
+
+                  {msg.mediaUrl && (
+                    <div className="mt-2 -mx-1 mb-1 rounded-xl overflow-hidden border border-white/10">
+                      <img src={msg.mediaUrl} alt="Shared" className="w-full h-auto max-h-80 object-cover" />
+                    </div>
+                  )}
+
+                  <div className={`text-[9px] mt-1 opacity-40 font-mono text-right ${isMe ? 'text-white' : 'text-gray-400'}`}>
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
       </main>
 
-      {/* ================= FOOTER (IMAGE STYLE MATCHED) ================= */}
-      <footer className="relative z-40 p-4 bg-black/60 backdrop-blur-xl flex-shrink-0">
-        <div className="max-w-2xl mx-auto flex items-center bg-[#121212] rounded-full px-2 py-1.5 gap-2 transition-all shadow-xl border border-white/5">
+      {/* ================= NEW: IMAGE-STYLE FOOTER ================= */}
+      <footer className="relative z-40 p-4 bg-black/40 backdrop-blur-xl flex-shrink-0">
+        <div className="max-w-2xl mx-auto flex items-center bg-[#121212] rounded-full px-2 py-1.5 gap-2 shadow-xl border border-white/5 transition-all">
           
-          {/* Media Button (Left) */}
           <label className="p-2.5 text-white hover:bg-white/10 rounded-full cursor-pointer transition-colors">
             <ImageIcon className="w-6 h-6" />
             <input type="file" accept="image/*" hidden onChange={handlePhotoUpload} />
@@ -172,11 +190,12 @@ const ChatRoom = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Message..."
             disabled={!connected}
-            className="flex-1 bg-transparent py-2 text-white outline-none focus:ring-0 border-none text-[16px] placeholder:text-gray-500 shadow-none"
-            style={{ boxShadow: 'none' }}
+            // COMPLETE FOCUS REMOVAL
+            className="flex-1 bg-transparent py-2 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus:border-transparent border-none ring-0 shadow-none"
+            style={{ fontSize: '16px', boxShadow: 'none' }}
           />
 
-          {/* Send Button (Right - Pop & Slide Effect) */}
+          {/* SEND BUTTON: Pop & Slide Effect */}
           {(newMessage.trim() || uploadLoading) && (
             <button
               onClick={sendMessage}
