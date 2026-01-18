@@ -18,47 +18,54 @@ const ChatRoom = () => {
   const [loading, setLoading] = useState(true);
   const [footerHeight, setFooterHeight] = useState(0);
 
-  const messagesEndRef = useRef(null);
   const footerRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const stompRef = useRef(null);
 
   const username = localStorage.getItem('username');
 
-  /* ================= VISUAL VIEWPORT FIX (CRITICAL) ================= */
+  /* ================= VISUAL VIEWPORT FIX ================= */
   useEffect(() => {
-    const setAppHeight = () => {
-      const height = window.visualViewport
+    const setHeight = () => {
+      const h = window.visualViewport
         ? window.visualViewport.height
         : window.innerHeight;
 
-      document.documentElement.style.setProperty(
-        '--app-height',
-        `${height}px`
-      );
+      document.documentElement.style.setProperty('--app-height', `${h}px`);
     };
 
-    setAppHeight();
-
-    window.visualViewport?.addEventListener('resize', setAppHeight);
-    window.addEventListener('resize', setAppHeight);
+    setHeight();
+    window.visualViewport?.addEventListener('resize', setHeight);
+    window.addEventListener('resize', setHeight);
 
     return () => {
-      window.visualViewport?.removeEventListener('resize', setAppHeight);
-      window.removeEventListener('resize', setAppHeight);
+      window.visualViewport?.removeEventListener('resize', setHeight);
+      window.removeEventListener('resize', setHeight);
     };
   }, []);
 
-  /* ================= MEASURE FOOTER ================= */
+  /* ================= FOOTER HEIGHT (SAFE AREA AWARE) ================= */
   useEffect(() => {
     if (!footerRef.current) return;
 
-    const update = () =>
-      setFooterHeight(footerRef.current.offsetHeight);
+    const update = () => {
+      const safeArea =
+        parseFloat(
+          getComputedStyle(document.documentElement)
+            .getPropertyValue('env(safe-area-inset-bottom)')
+        ) || 0;
+
+      setFooterHeight(footerRef.current.offsetHeight + safeArea);
+    };
 
     update();
+    window.visualViewport?.addEventListener('resize', update);
     window.addEventListener('resize', update);
 
-    return () => window.removeEventListener('resize', update);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', update);
+      window.removeEventListener('resize', update);
+    };
   }, []);
 
   /* ================= FETCH ROOM ================= */
@@ -104,7 +111,7 @@ const ChatRoom = () => {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
   }, [messages]);
 
-  /* ================= SEND ================= */
+  /* ================= ACTIONS ================= */
   const sendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !connected) return;
@@ -127,8 +134,10 @@ const ChatRoom = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center bg-black text-purple-400"
-           style={{ height: 'var(--app-height)' }}>
+      <div
+        className="flex items-center justify-center bg-black text-purple-400"
+        style={{ height: 'var(--app-height)' }}
+      >
         Loading…
       </div>
     );
@@ -139,7 +148,7 @@ const ChatRoom = () => {
       className="relative bg-[#050208] overflow-hidden"
       style={{ height: 'var(--app-height)' }}
     >
-      {/* ================= HEADER (FIXED) ================= */}
+      {/* ================= HEADER ================= */}
       <header className="fixed top-0 left-0 right-0 z-30 h-[72px] px-4 flex items-center gap-3 bg-black/90 backdrop-blur-xl border-b border-white/10">
         <button onClick={() => navigate('/chats')}>
           <ChevronLeft className="text-white" />
@@ -202,10 +211,13 @@ const ChatRoom = () => {
         <div ref={messagesEndRef} />
       </main>
 
-      {/* ================= FOOTER (FIXED) ================= */}
+      {/* ================= FOOTER ================= */}
       <footer
         ref={footerRef}
-        className="fixed bottom-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 py-3"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 pt-3"
+        style={{
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+        }}
       >
         <form onSubmit={sendMessage} className="flex items-center gap-3">
           <input
@@ -221,10 +233,7 @@ const ChatRoom = () => {
             <input type="file" hidden />
           </label>
 
-          <button
-            type="submit"
-            className="bg-purple-600 p-3 rounded-full"
-          >
+          <button type="submit" className="bg-purple-600 p-3 rounded-full">
             <Send className="text-white w-4 h-4" />
           </button>
         </form>
