@@ -262,9 +262,8 @@ const ChatRoom = () => {
       </header>
 
       {/* CHAT AREA: Custom padding for desktop + top padding for fixed header */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar z-10 relative flex flex-col">
-        <div className="flex-1"></div>
-        <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4 pt-[68px] md:pt-[96px] pb-2">
+      <main className="flex-1 overflow-y-auto custom-scrollbar z-10 relative">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4 pt-[68px] md:pt-[96px] pb-[88px] md:pb-[96px]">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-gray-500 text-sm italic">
               No transmissions in this sector yet...
@@ -300,11 +299,10 @@ const ChatRoom = () => {
           )}
           <div ref={messagesEndRef} />
         </div>
-        <div className="h-[76px] md:h-[88px] flex-shrink-0"></div>
       </main>
 
       {/* FOOTER: Fixed at the bottom */}
-      <footer className="fixed bottom-0 left-0 right-0 z-30 py-3 px-4 md:p-4 bg-black/90 backdrop-blur-xl border-t border-white/10 flex-shrink-0">
+      <footer className="fixed bottom-0 left-0 right-0 z-30 py-2 px-4 md:p-4 bg-black/95 backdrop-blur-xl border-t border-white/10 flex-shrink-0">
         <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex items-center gap-2 md:gap-4">
           <div className="relative flex-1">
             <input
@@ -314,11 +312,11 @@ const ChatRoom = () => {
               placeholder={connected ? `Message #${roomId}...` : "Connecting..."}
               disabled={!connected}
               style={{ fontSize: '16px' }}
-              className="w-full bg-white/5 border border-white/10 rounded-full py-3 px-5 md:px-8 outline-none focus:border-purple-500/50 text-white transition-all"
+              className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 px-5 md:px-8 outline-none focus:border-purple-500/50 text-white transition-all"
             />
           </div>
           
-          <label className={`cursor-pointer p-3 rounded-full transition-colors flex-shrink-0 ${uploadLoading ? 'animate-pulse opacity-50' : 'hover:bg-white/10'}`}>
+          <label className={`cursor-pointer p-2 md:p-3 rounded-full transition-colors flex-shrink-0 ${uploadLoading ? 'animate-pulse opacity-50' : 'hover:bg-white/10'}`}>
             <Paperclip className="w-5 h-5 text-purple-400" />
             <input 
               type="file" 
@@ -332,7 +330,7 @@ const ChatRoom = () => {
           <button 
             type="submit" 
             disabled={!newMessage.trim() || !connected} 
-            className="bg-purple-600 p-3 md:p-4 rounded-full hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/20"
+            className="bg-purple-600 p-2.5 md:p-4 rounded-full hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/20"
           >
             <Send className="w-5 h-5 text-white" />
           </button>
