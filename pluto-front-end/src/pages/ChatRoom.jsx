@@ -1,11 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Client } from '@stomp/stompjs';
-import { ChevronLeft, Send, Users, Paperclip, Copy } from 'lucide-react';
+import { ChevronLeft, Send, Users, Paperclip } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
-
-const HEADER_HEIGHT = 72;
 
 const ChatRoom = () => {
   const { roomId } = useParams();
@@ -14,59 +12,14 @@ const ChatRoom = () => {
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [footerHeight, setFooterHeight] = useState(0);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [connected, setConnected] = useState(false);
 
-  const footerRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const stompRef = useRef(null);
+  const stompClientRef = useRef(null);
 
   const username = localStorage.getItem('username');
-
-  /* ================= VISUAL VIEWPORT FIX ================= */
-  useEffect(() => {
-    const setHeight = () => {
-      const h = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight;
-
-      document.documentElement.style.setProperty('--app-height', `${h}px`);
-    };
-
-    setHeight();
-    window.visualViewport?.addEventListener('resize', setHeight);
-    window.addEventListener('resize', setHeight);
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', setHeight);
-      window.removeEventListener('resize', setHeight);
-    };
-  }, []);
-
-  /* ================= FOOTER HEIGHT (SAFE AREA AWARE) ================= */
-  useEffect(() => {
-    if (!footerRef.current) return;
-
-    const update = () => {
-      const safeArea =
-        parseFloat(
-          getComputedStyle(document.documentElement)
-            .getPropertyValue('env(safe-area-inset-bottom)')
-        ) || 0;
-
-      setFooterHeight(footerRef.current.offsetHeight + safeArea);
-    };
-
-    update();
-    window.visualViewport?.addEventListener('resize', update);
-    window.addEventListener('resize', update);
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', update);
-      window.removeEventListener('resize', update);
-    };
-  }, []);
 
   /* ================= FETCH ROOM ================= */
   useEffect(() => {
@@ -86,7 +39,7 @@ const ChatRoom = () => {
 
   /* ================= WEBSOCKET ================= */
   useEffect(() => {
-    if (!roomId || !username) return;
+    if (!username || !roomId) return;
 
     const client = new Client({
       brokerURL: API_ENDPOINTS.WS_URL,
@@ -101,7 +54,7 @@ const ChatRoom = () => {
     });
 
     client.activate();
-    stompRef.current = client;
+    stompClientRef.current = client;
 
     return () => client.deactivate();
   }, [roomId, username]);
@@ -116,7 +69,7 @@ const ChatRoom = () => {
     e.preventDefault();
     if (!newMessage.trim() || !connected) return;
 
-    stompRef.current.publish({
+    stompClientRef.current.publish({
       destination: `/app/chat/${roomId}`,
       body: JSON.stringify({
         sender: username,
@@ -128,30 +81,45 @@ const ChatRoom = () => {
     setNewMessage('');
   };
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('sender', username);
+
+    try {
+      setUploadLoading(true);
+      await axios.post(API_ENDPOINTS.UPLOAD_PHOTO(roomId), formData);
+    } finally {
+      setUploadLoading(false);
+      e.target.value = '';
+    }
+  };
+
   const copyRoomId = () => {
     navigator.clipboard.writeText(roomId);
   };
 
   if (loading) {
     return (
-      <div
-        className="flex items-center justify-center bg-black text-purple-400"
-        style={{ height: 'var(--app-height)' }}
-      >
+      <div className="h-screen bg-black flex items-center justify-center text-purple-400">
         Loading…
       </div>
     );
   }
 
   return (
-    <div
-      className="relative bg-[#050208] overflow-hidden"
-      style={{ height: 'var(--app-height)' }}
-    >
-      {/* ================= HEADER ================= */}
-      <header className="fixed top-0 left-0 right-0 z-30 h-[72px] px-4 flex items-center gap-3 bg-black/90 backdrop-blur-xl border-b border-white/10">
-        <button onClick={() => navigate('/chats')}>
-          <ChevronLeft className="text-white" />
+    <div className="h-[100svh] w-full flex flex-col overflow-hidden bg-[#050208]">
+
+      {/* ================= HEADER (STICKY) ================= */}
+      <header className="sticky top-0 z-30 w-full p-3 border-b border-white/10 bg-black/80 backdrop-blur-xl flex items-center gap-3">
+        <button
+          onClick={() => navigate('/chats')}
+          className="p-2 hover:bg-white/10 rounded-full"
+        >
+          <ChevronLeft className="w-6 h-6 text-white" />
         </button>
 
         <div className="flex-1 min-w-0">
@@ -170,71 +138,70 @@ const ChatRoom = () => {
 
         <button
           onClick={copyRoomId}
-          className="p-2 rounded-lg hover:bg-white/10"
+          className="p-2 bg-white/5 border border-white/10 rounded-xl"
         >
-          <Copy className="w-4 h-4 text-purple-400" />
+          <Paperclip className="w-4 h-4 text-purple-400 rotate-45" />
         </button>
       </header>
 
       {/* ================= MESSAGES ================= */}
-      <main
-        className="overflow-y-auto px-4 space-y-4"
-        style={{
-          paddingTop: HEADER_HEIGHT,
-          paddingBottom: footerHeight,
-          height: '100%',
-        }}
-      >
-        {messages.map((m, i) => (
+      <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {messages.map((msg, i) => (
           <div
             key={i}
             className={`flex ${
-              m.sender === username ? 'justify-end' : 'justify-start'
+              msg.sender === username ? 'justify-end' : 'justify-start'
             }`}
           >
             <div
               className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${
-                m.sender === username
+                msg.sender === username
                   ? 'bg-purple-600 text-white'
                   : 'bg-white/10 text-white'
               }`}
             >
-              {m.sender !== username && (
+              {msg.sender !== username && (
                 <p className="text-[10px] text-purple-400 font-bold mb-1">
-                  {m.sender}
+                  {msg.sender}
                 </p>
               )}
-              <p>{m.content}</p>
+              <p>{msg.content}</p>
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </main>
 
-      {/* ================= FOOTER ================= */}
-      <footer
-        ref={footerRef}
-        className="fixed bottom-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 pt-3"
-        style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
-        }}
-      >
+      {/* ================= FOOTER (NORMAL FLOW) ================= */}
+      <footer className="relative z-30 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10">
         <form onSubmit={sendMessage} className="flex items-center gap-3">
           <input
+            type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message…"
-            className="flex-1 rounded-full px-5 py-2 bg-white/5 border border-white/10 text-white outline-none"
+            disabled={!connected}
+            className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white outline-none"
             style={{ fontSize: '16px' }}
           />
 
-          <label className="cursor-pointer">
-            <Paperclip className="text-purple-400" />
-            <input type="file" hidden />
+          <label className="cursor-pointer p-3 rounded-full hover:bg-white/10">
+            <Paperclip className="w-5 h-5 text-purple-400" />
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handlePhotoUpload}
+              disabled={!connected || uploadLoading}
+            />
           </label>
 
-          <button type="submit" className="bg-purple-600 p-3 rounded-full">
-            <Send className="text-white w-4 h-4" />
+          <button
+            type="submit"
+            disabled={!newMessage.trim() || !connected}
+            className="bg-purple-600 p-3 rounded-full disabled:opacity-50"
+          >
+            <Send className="w-5 h-5 text-white" />
           </button>
         </form>
       </footer>
