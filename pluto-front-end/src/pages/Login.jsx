@@ -16,6 +16,22 @@ const Login = () => {
   const navigate = useNavigate();
   const containerRef = useRef(null);
 
+  // Prevent zoom on mobile
+  useEffect(() => {
+    // Add viewport meta tag to prevent zoom
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }
+
+    return () => {
+      // Restore original viewport on unmount
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+      }
+    };
+  }, []);
+
   // The text still changes to reflect the mode, but the colors will stay purple
   const systemStatuses = isLogin 
     ? ["Establishing subspace link...", "Encrypting frequency...", "Awaiting identity signature..."]
@@ -30,27 +46,33 @@ const Login = () => {
 
   // Handle input blur to reset zoom on mobile
   useEffect(() => {
+    const handleInputFocus = (e) => {
+      // Prevent default zoom on iOS
+      e.target.style.fontSize = '16px';
+    };
+
     const handleInputBlur = () => {
-      // Small delay to ensure keyboard is hidden
+      // Reset scroll position after keyboard closes
       setTimeout(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = 0;
-          window.scrollTo(0, 0);
-        }
-      }, 100);
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }, 300);
     };
 
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
+      input.addEventListener('focus', handleInputFocus);
       input.addEventListener('blur', handleInputBlur);
     });
 
     return () => {
       inputs.forEach(input => {
+        input.removeEventListener('focus', handleInputFocus);
         input.removeEventListener('blur', handleInputBlur);
       });
     };
-  }, []);
+  }, [isLogin]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -138,7 +160,8 @@ const Login = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
                   inputMode="text"
-                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
+                  style={{ fontSize: '16px' }}
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-white transition-all duration-300"
                 />
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
               </div>
@@ -156,7 +179,8 @@ const Login = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
                     inputMode="email"
-                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all"
+                    style={{ fontSize: '16px' }}
+                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-white transition-all"
                   />
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                 </div>
@@ -173,7 +197,8 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete={isLogin ? "current-password" : "new-password"}
-                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-sm text-white transition-all duration-300"
+                  style={{ fontSize: '16px' }}
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 sm:py-3.5 px-11 outline-none focus:border-purple-500/40 text-white transition-all duration-300"
                 />
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                 <Rocket className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-500 pointer-events-none ${password ? 'text-purple-500' : 'opacity-0'}`} />
